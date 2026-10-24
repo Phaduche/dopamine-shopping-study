@@ -11,7 +11,8 @@ const $ = id => document.getElementById(id);
 const view = $("view");
 const won = n => n.toLocaleString("ko-KR");
 const rate = p => Math.round((1 - p.price / p.listPrice) * 100);
-const art = id => getArt(id);
+let PHOTO = {}; // 상품 id → shop/img/ 안의 사진 경로 (없으면 SVG 그림)
+const art = id => PHOTO[id] ? `<img class="photo" src="${PHOTO[id]}" alt="">` : getArt(id);
 const stars = r => "★".repeat(Math.round(r)) + "☆".repeat(5 - Math.round(r));
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -129,7 +130,7 @@ function results(title, list, sort) {
   const join = base.includes("?") ? "&" : "?";
   view.innerHTML = `<div class="wrap">
     <div class="result-head"><h2>${title}</h2>
-      <div class="sort">${[["rank", "랭킹순"], ["low", "낮은가격순"], ["high", "높은가격순"], ["review", "리뷰많은순"]]
+      <div class="sort">${[["rank", "쿠팡 랭킹순"], ["low", "낮은가격순"], ["high", "높은가격순"], ["review", "리뷰많은순"]]
         .map(([k, n]) => `<a href="${base}${join}sort=${k}" class="${(sort || "rank") === k ? "on" : ""}">${n}</a>`).join(" · ")}</div></div>
     ${list.length ? grid(list) : `<div class="empty">검색 결과가 없습니다.<br>다른 검색어를 입력해 보세요.</div>`}
   </div>`;
@@ -155,7 +156,7 @@ function product(id) {
   log("product_view", { product: id });
   const dist = [72, 18, 6, 2, 2];
   view.innerHTML = `<div class="wrap">
-    <div class="crumb">홈 › <a href="#/category/${cat.id}">${cat.name}</a></div>
+    <div class="crumb">쿠팡 홈 › <a href="#/category/${cat.id}">${cat.name}</a></div>
     <div class="pd">
       <div class="pd-img">${art(p.id)}</div>
       <div class="pd-info">
@@ -339,4 +340,4 @@ document.addEventListener("visibilitychange", () => {
 });
 log("app_open");
 updateCount();
-route();
+fetch("/api/photos").then(r => r.ok ? r.json() : {}).catch(() => ({})).then(p => { PHOTO = p; route(); });

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>연구자 콘솔</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; background: #f4f5f7; color: #111; font-size: 14px; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 24px 16px 60px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: #666; margin-bottom: 20px; }
+  .card { background: #fff; border: 1px solid #e3e5e8; border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+  .card h2 { font-size: 16px; margin: 0 0 14px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+  label.opt { display: flex; gap: 6px; align-items: center; border: 1px solid #d5d8dc; border-radius: 6px; padding: 10px 14px; cursor: pointer; }
+  label.opt:has(input:checked) { border-color: #346aff; background: #f2f6ff; }
+  button, .btn { border: 0; background: #346aff; color: #fff; padding: 10px 18px; border-radius: 6px; font-size: 14px; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-block; }
+  .btn.ghost { background: #fff; color: #346aff; border: 1px solid #346aff; }
+  .stats { display: flex; gap: 12px; flex-wrap: wrap; }
+  .stat { flex: 1; min-width: 140px; background: #f8f9fb; border-radius: 6px; padding: 12px 14px; }
+  .stat b { display: block; font-size: 24px; margin-top: 4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; }
+  th { color: #666; font-weight: 600; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 700; }
+  .c0 { background: #e8efff; color: #346aff; } .c1 { background: #fff1e6; color: #d9480f; }
+  .msg { color: #00891a; font-size: 13px; }
+  .table-wrap { overflow-x: auto; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>연구자 콘솔</h1>
+  <div class="sub">조건 배정 설정 · 참가자 현황 · 데이터 내보내기 (이 컴퓨터에서만 접속 가능)</div>
+
+  <div class="card">
+    <h2>조건 배정 방식</h2>
+    <div class="row">
+      <label class="opt"><input type="radio" name="mode" value="fixed"> 고정 — 아래 조건으로 모두 배정</label>
+      <label class="opt"><input type="radio" name="mode" value="random"> 무작위 — 참가자마다 0/1 난수 배정 (1:1)</label>
+    </div>
+    <div class="row" id="fixedRow">
+      <label class="opt"><input type="radio" name="cond" value="0"> 0 · 데모 페이지 (/shop/)</label>
+      <label class="opt"><input type="radio" name="cond" value="1"> 1 · 실제 쿠팡 (coupang.com)</label>
+    </div>
+    <div class="row"><button id="save">저장</button><span class="msg" id="msg"></span></div>
+  </div>
+
+  <div class="card">
+    <h2>참가자 현황</h2>
+    <div class="stats">
+      <div class="stat">전체<b id="nAll">0</b></div>
+      <div class="stat">조건 0 · 데모<b id="n0">0</b></div>
+      <div class="stat">조건 1 · 실제 쿠팡<b id="n1">0</b></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>데이터 내보내기 (CSV)</h2>
+    <div class="row">
+      <a class="btn" href="/api/export/participants.csv">참가자 + 설문 응답</a>
+      <a class="btn ghost" href="/api/export/events.csv">행동 로그</a>
+    </div>
+    <div class="sub" style="margin:0">원본은 <code>data/study.db</code>(SQLite)에 저장됩니다. git에는 올라가지 않습니다.</div>
+  </div>
+
+  <div class="card">
+    <h2>참가자 목록</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>연구 ID</th><th>시작 시각</th><th>조건</th><th>배정 방식</th><th>로그 수</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const pick = (name, v) => { const el = document.querySelector(`input[name=${name}][value="${v}"]`); if (el) el.checked = true; };
+const val = name => document.querySelector(`input[name=${name}]:checked`)?.value;
+
+function syncFixedRow() { $("fixedRow").style.opacity = val("mode") === "fixed" ? 1 : .4; }
+document.querySelectorAll("input[name=mode]").forEach(r => r.onchange = syncFixedRow);
+
+async function load(withSettings) {
+  const d = await fetch("/api/admin/summary").then(r => r.json());
+  // 자동 새로고침 때는 아직 저장하지 않은 선택을 덮어쓰지 않는다
+  if (withSettings) { pick("mode", d.settings.assignment_mode); pick("cond", d.settings.fixed_condition); syncFixedRow(); }
+  const ps = d.participants;
+  $("nAll").textContent = ps.length;
+  $("n0").textContent = ps.filter(p => p.condition === 0).length;
+  $("n1").textContent = ps.filter(p => p.condition === 1).length;
+  $("rows").innerHTML = ps.length ? ps.map(p => `<tr><td>${p.pid}</td><td>${p.created_at.replace("T", " ").slice(0, 19)}</td>
+    <td><span class="tag c${p.condition}">${p.condition} · ${p.condition ? "실제 쿠팡" : "데모"}</span></td>
+    <td>${p.assignment_mode === "random" ? "무작위" : "고정"}</td><td>${p.events}</td></tr>`).join("")
+    : `<tr><td colspan="5" style="color:#999;text-align:center;padding:24px">아직 참가자가 없습니다.</td></tr>`;
+}
+
+$("save").onclick = async () => {
+  const r = await fetch("/api/admin/settings", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ assignment_mode: val("mode"), fixed_condition: +val("cond") }) });
+  $("msg").textContent = r.ok ? "저장했습니다. 다음 참가자부터 적용됩니다." : "저장 실패";
+  load(true);
+};
+load(true);
+setInterval(() => load(false), 10000);
+</script>
+</body>
+</html>

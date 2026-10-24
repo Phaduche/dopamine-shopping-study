@@ -149,6 +149,15 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/api/settings":
             with db() as c:
                 return self.send_json(get_settings(c))
+        if path == "/api/photos":
+            # shop/img/<상품id>.jpg|png|webp 가 있으면 그 사진을 SVG 대신 쓴다
+            img_dir = ROOT / "shop" / "img"
+            photos = {}
+            if img_dir.is_dir():
+                for f in sorted(img_dir.iterdir()):
+                    if f.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp"):
+                        photos.setdefault(f.stem, f"img/{f.name}")
+            return self.send_json(photos)
         if path == "/api/admin/summary":
             with db() as c:
                 ps = [dict(r) for r in c.execute(

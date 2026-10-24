@@ -1,8 +1,10 @@
-# 클론팡 · 쿠팡 스타일 쇼핑 페이지 (로컬 실습용)
+# 클론팡 · 쿠팡 스타일 쇼핑 페이지
+
+배포 주소: https://phaduche.github.io/dopamine-shopping-study/ (main에 push하면 자동 반영)
 
 쿠팡 UI를 참고해 만든 단일 HTML 쇼핑 페이지입니다. 실제 쿠팡과 관련이 없으며, 상품·가격은 모두 가상입니다.
 
-## 실행
+## 로컬에서 실행
 
 ```bash
 python3 -m http.server 8765

@@ -120,6 +120,11 @@ class Handler(SimpleHTTPRequestHandler):
             return None
         return super().send_head()
 
+    # 파일을 고치면 새로고침만으로 바로 보이도록 브라우저 캐시를 쓰지 않게 한다
+    def end_headers(self):
+        self.send_header("Cache-Control", "no-cache")
+        super().end_headers()
+
     def log_message(self, fmt, *args):
         if "/api/log" not in self.path:
             sys.stderr.write("%s %s\n" % (self.log_date_time_string(), fmt % args))

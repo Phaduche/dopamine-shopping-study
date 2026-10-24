@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>담아마켓</title>
+    <!--
+      GitHub Pages SPA 폴백 (spa-github-pages 방식)
+      하위경로 직접접속/새로고침(/admin, /product/:id 등)을 index.html로 복원.
+      pathSegmentsToKeep=1 : 프로젝트 페이지의 /<repo>/ 세그먼트를 유지.
+      참가자 루트 URL(/?cond=F&pid=...)은 404를 거치지 않으므로 영향 없음.
+    -->
+    <script type="text/javascript">
+      var pathSegmentsToKeep = 1
+      var l = window.location
+      l.replace(
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
+        l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
+        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+        l.hash,
+      )
+    </script>
+  </head>
+  <body></body>
+</html>

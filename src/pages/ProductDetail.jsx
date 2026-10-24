@@ -45,12 +45,18 @@ export default function ProductDetail() {
   return (
     <div className="container">
       <div className="pd">
-        <Thumb thumb={product.thumb} size="pd" />
+        <Thumb product={product} size="pd" />
         <div>
           <div className="pd__brand">{product.brand}</div>
           <h1 className="pd__title">{product.name}</h1>
           <div className="rating" style={{ fontSize: 13 }}>
-            <span className="stars">★</span> {product.rating.toFixed(1)} · 후기 {product.reviews.toLocaleString()}개
+            <span className="stars">★★★★★</span> {product.rating.toFixed(1)} · 후기 {product.reviews.toLocaleString()}개
+          </div>
+
+          <div className="pd__perks">
+            {product.rocket && <span className="perk blue">⚡ 번개배송</span>}
+            <span className="perk green">무료배송</span>
+            <span className="perk">연구용 포인트 적립</span>
           </div>
 
           <div className="pd__price">

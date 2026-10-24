@@ -266,3 +266,54 @@ img { max-width: 100%; }
   .card__thumb { font-size: 52px; }
   .hero .emoji { display: none; }
 }
+
+/* ============================================================
+   v2 리파인 — SVG 상품 일러스트 + 쿠팡형 디테일 상향
+   ============================================================ */
+
+/* SVG 썸네일이 컨테이너를 꽉 채우도록 */
+.card__thumb, .pd__thumb, .ci-thumb { overflow: hidden; padding: 0; }
+.card__thumb svg, .pd__thumb svg, .ci-thumb svg { width: 100%; height: 100%; display: block; }
+.card__thumb { background: #fafafa; }
+.pd__thumb { background: #fafafa; }
+
+/* 상품 카드 디테일 */
+.card { border-color: #f0f0f0; }
+.card__name { color: #333; font-size: 13.5px; }
+.card__deliv { font-size: 11px; color: #2aa968; font-weight: 700; margin-top: 2px; }
+.card__deliv b { color: #111; }
+.card__pergram { font-size: 11px; color: var(--muted-2); }
+.price-row .won { font-size: 13px; font-weight: 800; align-self: flex-end; margin-left: -2px; }
+
+/* 별점 별 색 통일 + 리뷰수 */
+.rating .stars { letter-spacing: -1px; }
+
+/* 홈: 번개배송 프로모 스트립 */
+.promo-strip { display: flex; align-items: center; gap: 14px; background: linear-gradient(90deg,#eaf4ff,#f3f9ff); border: 1px solid #dbeafe; border-radius: 12px; padding: 14px 18px; margin: 14px 0 4px; }
+.promo-strip .pm-ic { font-size: 26px; }
+.promo-strip .pm-t { font-weight: 800; color: var(--rocket-dark); font-size: 15px; }
+.promo-strip .pm-s { color: var(--muted); font-size: 12px; }
+
+/* 홈: 카테고리 퀵 아이콘 */
+.quickcats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin: 16px 0 4px; }
+.quickcat { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 4px; border-radius: 12px; background: #fff; border: 1px solid var(--line); cursor: pointer; }
+.quickcat:hover { background: #fafafa; }
+.quickcat .qc-ic { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+.quickcat .qc-l { font-size: 12px; color: var(--ink-2); }
+
+/* 상세 페이지 썸네일 라운드 */
+.pd__thumb { border-radius: 12px; }
+
+/* 장바구니 썸네일 라운드 유지 */
+.ci-thumb { border: 1px solid var(--line); }
+
+/* 상세: 혜택 배지 줄 */
+.pd__perks { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 2px; }
+.perk { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; background: #f3f5f7; color: #555; }
+.perk.blue { background: #eaf4ff; color: var(--rocket-dark); }
+.perk.green { background: #eafaf1; color: var(--ok); }
+
+@media (max-width: 640px) {
+  .quickcats { grid-template-columns: repeat(5, 1fr); }
+  .quickcat:nth-child(6) { display: none; }
+}

@@ -35,7 +35,7 @@ export default function Cart() {
         <h3>장바구니</h3>
         {items.map((it) => (
           <div className="cart-item" key={it.id}>
-            <Thumb thumb={it.product.thumb} size="ci" />
+            <Thumb product={it.product} size="ci" />
             <div className="ci-info">
               <div className="ci-name">{it.product.name}</div>
               <div className="ci-price">{formatPrice(it.product.price * it.qty)}</div>

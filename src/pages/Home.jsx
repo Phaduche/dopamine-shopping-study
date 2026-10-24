@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import CategoryBar from '../components/CategoryBar.jsx'
 import ProductCard from '../components/ProductCard.jsx'
-import { PRODUCTS } from '../data/products.js'
+import { PRODUCTS, CATEGORIES } from '../data/products.js'
 import { useStudy } from '../context/StudyContext.jsx'
 import { useScreenLog } from '../lib/useScreenLog.js'
 import * as logger from '../lib/logger.js'
@@ -22,6 +22,15 @@ function seededShuffle(arr, seedStr) {
   return a
 }
 
+const QUICK = [
+  { id: 'stationery', ic: '✏️', bg: '#FFF1C2' },
+  { id: 'living', ic: '🧺', bg: '#D6F5E3' },
+  { id: 'desk', ic: '🖥️', bg: '#DCE7FF' },
+  { id: 'accessory', ic: '👝', bg: '#FDE0EC' },
+  { id: 'organize', ic: '🗂️', bg: '#E9DEFF' },
+  { id: 'all', ic: '🏷️', bg: '#FFE3D6' },
+]
+
 export default function Home() {
   const { state, condition } = useStudy()
   useScreenLog('home')
@@ -29,23 +38,45 @@ export default function Home() {
 
   const ordered = useMemo(() => seededShuffle(PRODUCTS, state.pid || 'seed'), [state.pid])
   const list = cat === 'all' ? ordered : ordered.filter((p) => p.category === cat)
+  const pick = (c) => {
+    logger.logEvent('category_select', { category: c })
+    setCat(c)
+  }
+  const catName = (id) => CATEGORIES.find((c) => c.id === id)?.name || ''
 
   return (
     <>
-      <CategoryBar
-        active={cat}
-        onSelect={(c) => {
-          logger.logEvent('category_select', { category: c })
-          setCat(c)
-        }}
-      />
+      <CategoryBar active={cat} onSelect={pick} />
       <div className="container">
+        {/* 번개배송 프로모 */}
+        <div className="promo-strip">
+          <span className="pm-ic">⚡</span>
+          <div>
+            <div className="pm-t">
+              {condition.showOrderFlow ? '오늘 주문하면 내일 도착, 번개배송' : '마음에 드는 상품을 자유롭게 둘러보세요'}
+            </div>
+            <div className="pm-s">
+              {condition.showOrderFlow ? '지금 담으면 바로 출발해요' : '천천히 비교하고 가장 끌리는 상품을 찾아보세요'}
+            </div>
+          </div>
+        </div>
+
+        {/* 카테고리 퀵 아이콘 */}
+        <div className="quickcats">
+          {QUICK.map((q) => (
+            <div key={q.id} className={`quickcat ${cat === q.id ? 'sel' : ''}`} onClick={() => pick(q.id)} role="button" tabIndex={0}>
+              <div className="qc-ic" style={{ background: q.bg }}>{q.ic}</div>
+              <div className="qc-l">{catName(q.id)}</div>
+            </div>
+          ))}
+        </div>
+
         <div className="hero">
           <div>
             <h2>오늘의 추천 상품</h2>
             <p>
               {condition.showOrderFlow
-                ? '마음에 드는 상품을 담아 주문해 보세요 · 번개배송'
+                ? '마음에 드는 상품을 담아 주문해 보세요'
                 : '가장 마음에 드는 상품을 골라 보세요'}
             </p>
           </div>
@@ -53,7 +84,7 @@ export default function Home() {
         </div>
 
         <div className="section-title">
-          {condition.showOrderFlow ? '지금 인기 있는 상품' : '상품 둘러보기'}
+          {cat === 'all' ? '지금 인기 있는 상품' : `${catName(cat)} 추천`}
         </div>
         <div className="grid">
           {list.map((p, i) => (

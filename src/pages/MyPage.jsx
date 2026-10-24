@@ -35,7 +35,7 @@ export default function MyPage() {
                 if (!p) return null
                 return (
                   <div className="cart-item" key={it.id}>
-                    <Thumb thumb={p.thumb} size="ci" />
+                    <Thumb product={p} size="ci" />
                     <div className="ci-info">
                       <div className="ci-name">{p.name}</div>
                       <div className="ci-price">{formatPrice(p.price * it.qty)} · 수량 {it.qty}</div>
@@ -56,7 +56,7 @@ export default function MyPage() {
           <h3>내가 선택한 상품</h3>
           {preferred ? (
             <div className="cart-item">
-              <Thumb thumb={preferred.thumb} size="ci" />
+              <Thumb product={preferred} size="ci" />
               <div className="ci-info">
                 <div className="ci-name">{preferred.name}</div>
                 <div className="ci-price">{formatPrice(preferred.price)}</div>

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>클론팡</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <div class="links"><a href="#/">즐겨찾기</a><a href="#/">입점신청 ▾</a></div>
+    <div class="links"><a href="#/">로그인</a><a href="#/">회원가입</a><a href="#/">고객센터</a></div>
+  </div>
+</div>
+
+<header class="header">
+  <div class="wrap">
+    <div class="cat-btn">
+      <div class="bars"><span></span><span></span><span></span></div>카테고리
+      <div class="cat-menu" id="catMenu"></div>
+    </div>
+    <div class="header-main">
+      <div class="header-row">
+        <a href="#/" class="logo"><span>c</span><span>l</span><span>o</span><span>n</span><span>e</span><span>pang</span></a>
+        <form class="search" id="searchForm">
+          <select id="searchCat"></select>
+          <input id="q" placeholder="찾고 싶은 상품을 검색해보세요!" autocomplete="off">
+          <button type="button" class="mic" aria-label="음성검색">🎙</button>
+          <button type="submit" class="go" aria-label="검색">
+            <svg width="22" height="22" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="#346aff" stroke-width="2.4"/><path d="M15.5 15.5 21 21" stroke="#346aff" stroke-width="2.4" stroke-linecap="round"/></svg>
+          </button>
+        </form>
+        <div class="icons">
+          <a href="#/orders"><svg width="30" height="30" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="#111" stroke-width="1.6"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" fill="none" stroke="#111" stroke-width="1.6"/></svg>마이페이지</a>
+          <a href="#/cart"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M2 3h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.1L21 7H6" fill="none" stroke="#111" stroke-width="1.6" stroke-linejoin="round"/><circle cx="9.5" cy="19.5" r="1.5" fill="#111"/><circle cx="17.5" cy="19.5" r="1.5" fill="#111"/></svg>장바구니<span class="badge" id="cartCount">0</span></a>
+        </div>
+      </div>
+      <nav class="gnb">
+        <a href="#/category/all" class="rocket"><i class="rk">🚀</i>로켓배송</a>
+        <a href="#/category/living">🥬 로켓프레시</a>
+        <a href="#/category/accessory">✈️ 로켓직구</a>
+        <a href="#/category/desk">⏰ 골드박스</a>
+        <a href="#/category/stationery">🎒 새학기 문구</a>
+        <a href="#/category/organize">🎟 이벤트/쿠폰</a>
+        <a href="#/orders">🚚 주문/배송조회</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<main id="view"></main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="links"><a href="#/">회사소개</a><a href="#/">Investor Relations</a><a href="#/">인재채용</a><a href="#/">입점 / 제휴문의</a><a href="#/">공지사항</a><a href="#/">고객의 소리</a><a href="#/">이용약관</a><a href="#/"><b>개인정보 처리방침</b></a></div>
+    <div class="info">
+      본 페이지는 쇼핑 경험 연구를 위해 만든 <b>연구용 모의 쇼핑몰</b>이며, 실제 쿠팡과 관련이 없습니다.<br>
+      모든 상품·브랜드·가격은 가상이며 실제 결제와 배송은 이루어지지 않습니다.
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script src="products.js"></script>
+<script src="art.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

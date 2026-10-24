@@ -36,3 +36,6 @@ pnpm-debug.log*
 /exports
 *.participant.json
 *.participant.csv
+
+# 연구 DB (참가자 자료는 커밋하지 않음)
+/data

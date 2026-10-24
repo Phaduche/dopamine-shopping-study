@@ -3,305 +3,134 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>클론팡 - 쿠팡 스타일 클론</title>
+<title>쇼핑 경험 연구 참여</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; background: #fff; color: #111; font-size: 14px; }
-  a { color: inherit; text-decoration: none; }
-  button { font-family: inherit; cursor: pointer; }
-  .wrap { max-width: 1020px; margin: 0 auto; padding: 0 10px; }
-
-  /* 상단 바 */
-  .topbar { background: #f0f0f0; border-bottom: 1px solid #e3e3e3; font-size: 12px; color: #555; }
-  .topbar .wrap { display: flex; justify-content: space-between; height: 32px; align-items: center; }
-  .topbar .links a { margin-left: 14px; }
-  .topbar .links a:hover { color: #346aff; }
-
-  /* 헤더 */
-  header { border-bottom: 1px solid #ddd; }
-  header .wrap { display: flex; align-items: center; height: 96px; gap: 16px; }
-  .cat-btn { width: 110px; height: 110px; background: #346aff; color: #fff; border: 0; font-size: 12px; font-weight: 700; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; margin-top: -14px; position: relative; }
-  .cat-btn .bars span { display: block; width: 26px; height: 3px; background: #fff; margin: 4px 0; }
-  .cat-menu { display: none; position: absolute; top: 110px; left: 0; width: 200px; background: #fff; border: 1px solid #ccc; z-index: 20; text-align: left; color: #111; font-weight: 400; }
-  .cat-btn:hover .cat-menu { display: block; }
-  .cat-menu a { display: block; padding: 9px 14px; font-size: 13px; }
-  .cat-menu a:hover { background: #f3f6ff; color: #346aff; }
-  .logo { font-size: 34px; font-weight: 900; letter-spacing: -1.5px; white-space: nowrap; }
-  .logo span:nth-child(1){color:#7b2c18}.logo span:nth-child(2){color:#e83a24}.logo span:nth-child(3){color:#f5a623}
-  .logo span:nth-child(4){color:#8bc34a}.logo span:nth-child(5){color:#29a7e1}.logo span:nth-child(6){color:#7b2c18}
-  .logo small { display: block; font-size: 10px; letter-spacing: 0; color: #999; font-weight: 400; }
-  .search { flex: 1; display: flex; border: 2px solid #346aff; height: 44px; }
-  .search select { border: 0; border-right: 1px solid #ddd; padding: 0 8px; background: #fff; font-size: 12px; }
-  .search input { flex: 1; border: 0; padding: 0 12px; font-size: 14px; outline: none; }
-  .search button { width: 46px; border: 0; background: #fff; font-size: 20px; }
-  .icons { display: flex; gap: 18px; }
-  .icons a { display: flex; flex-direction: column; align-items: center; font-size: 11px; color: #333; position: relative; }
-  .icons .ic { font-size: 26px; line-height: 1.2; }
-  .badge { position: absolute; top: -4px; right: -6px; background: #e52528; color: #fff; border-radius: 10px; font-size: 10px; padding: 1px 5px; font-weight: 700; }
-
-  /* 서브 네비 */
-  .gnb { border-bottom: 1px solid #ddd; }
-  .gnb .wrap { display: flex; gap: 24px; height: 42px; align-items: center; font-size: 13px; padding-left: 136px; }
-  .gnb a:hover { color: #346aff; }
-  .gnb .rocket { color: #346aff; font-weight: 700; }
-
-  /* 배너 */
-  .banner { position: relative; height: 380px; overflow: hidden; }
-  .slide { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .6s; color: #fff; text-align: center; }
-  .slide.on { opacity: 1; }
-  .slide h2 { font-size: 42px; font-weight: 900; margin-bottom: 10px; }
-  .slide p { font-size: 18px; opacity: .9; }
-  .slide .emoji { font-size: 120px; margin-left: 60px; }
-  .dots { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; }
-  .dots button { width: 10px; height: 10px; border-radius: 50%; border: 0; background: rgba(255,255,255,.5); }
-  .dots button.on { background: #fff; }
-
-  /* 카테고리 아이콘 */
-  .quick { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; padding: 26px 0; border-bottom: 1px solid #eee; }
-  .quick a { text-align: center; font-size: 12px; }
-  .quick .q { width: 56px; height: 56px; border-radius: 50%; background: #f5f7fb; margin: 0 auto 6px; display: flex; align-items: center; justify-content: center; font-size: 26px; }
-  .quick a:hover .q { background: #e6edff; }
-
-  /* 섹션 */
-  .sec { padding: 34px 0 10px; }
-  .sec-title { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
-  .sec-title h3 { font-size: 22px; }
-  .sec-title h3 em { font-style: normal; color: #346aff; }
-  .sec-title a { font-size: 12px; color: #777; }
-  .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 18px 14px; }
-  .item { cursor: pointer; }
-  .thumb { aspect-ratio: 1; border: 1px solid #eee; display: flex; align-items: center; justify-content: center; font-size: 72px; margin-bottom: 8px; position: relative; background: #fafafa; }
-  .item:hover .name { text-decoration: underline; }
-  .name { font-size: 13px; line-height: 1.4; height: 36px; overflow: hidden; margin-bottom: 4px; }
-  .price-row { display: flex; align-items: baseline; gap: 6px; }
-  .rate { color: #e52528; font-weight: 700; font-size: 16px; }
-  .price { font-weight: 700; font-size: 16px; }
-  .orig { color: #888; text-decoration: line-through; font-size: 12px; }
-  .rocket-tag { display: inline-block; font-size: 11px; color: #346aff; font-weight: 800; font-style: italic; margin-top: 3px; }
-  .deliv { font-size: 12px; color: #00891a; margin-top: 2px; }
-  .stars { font-size: 12px; color: #f5a623; margin-top: 2px; }
-  .stars span { color: #888; }
-  .add { margin-top: 6px; width: 100%; border: 1px solid #346aff; color: #346aff; background: #fff; height: 30px; font-size: 12px; font-weight: 700; }
-  .add:hover { background: #346aff; color: #fff; }
-
-  /* 장바구니 패널 */
-  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: none; z-index: 40; }
-  .cart { position: fixed; top: 0; right: -400px; width: 380px; height: 100%; background: #fff; z-index: 50; transition: right .3s; display: flex; flex-direction: column; }
-  .cart.open { right: 0; }
-  .cart.open + .overlay, .overlay.on { display: block; }
-  .cart h4 { padding: 18px; border-bottom: 1px solid #eee; font-size: 18px; display: flex; justify-content: space-between; }
-  .cart h4 button { border: 0; background: none; font-size: 20px; }
-  .cart-list { flex: 1; overflow-y: auto; padding: 10px 18px; }
-  .ci { display: flex; gap: 10px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: center; }
-  .ci .e { font-size: 34px; width: 52px; text-align: center; }
-  .ci .info { flex: 1; font-size: 12px; }
-  .ci .info b { display: block; font-size: 14px; margin-top: 4px; }
-  .qty { display: flex; border: 1px solid #ccc; }
-  .qty button { width: 24px; border: 0; background: #f6f6f6; }
-  .qty span { width: 28px; text-align: center; line-height: 24px; font-size: 12px; }
-  .cart-foot { padding: 18px; border-top: 1px solid #eee; }
-  .cart-foot .sum { display: flex; justify-content: space-between; font-size: 16px; margin-bottom: 12px; }
-  .cart-foot .sum b { color: #e52528; font-size: 20px; }
-  .buy { width: 100%; height: 50px; background: #346aff; color: #fff; border: 0; font-size: 16px; font-weight: 700; }
-  .empty { text-align: center; color: #999; padding: 60px 0; }
-
-  .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(0,0,0,.8); color: #fff; padding: 12px 22px; border-radius: 4px; opacity: 0; transition: .3s; z-index: 60; }
-  .toast.on { opacity: 1; transform: translateX(-50%); }
-
-  footer { margin-top: 50px; background: #f8f8f8; border-top: 1px solid #e5e5e5; padding: 30px 0 40px; font-size: 11px; color: #777; line-height: 1.8; }
-  footer .links { margin-bottom: 14px; font-size: 12px; color: #333; }
-  footer .links a { margin-right: 16px; }
-
-  @media (max-width: 760px) {
-    .topbar, .gnb, .cat-btn, .icons a:not(.cart-open) { display: none; }
-    header .wrap { height: 70px; }
-    .logo { font-size: 24px; }
-    .grid { grid-template-columns: repeat(2, 1fr); }
-    .quick { grid-template-columns: repeat(5, 1fr); }
-    .banner { height: 220px; }
-    .slide h2 { font-size: 24px; } .slide .emoji { font-size: 60px; margin-left: 20px; }
-    .cart { width: 100%; right: -100%; }
-  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; background: #f4f5f7; color: #111; font-size: 15px; line-height: 1.5; }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 24px 16px 60px; }
+  .bar { height: 6px; background: #e3e5e8; border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: #346aff; width: 0; transition: width .3s; }
+  .card { background: #fff; border: 1px solid #e3e5e8; border-radius: 10px; padding: 24px 22px; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  .desc { color: #666; font-size: 14px; margin-bottom: 20px; }
+  .q { padding: 16px 0; border-top: 1px solid #f0f0f0; }
+  .q:first-of-type { border-top: 0; }
+  .q-text { font-weight: 600; margin-bottom: 10px; }
+  .q.missing .q-text { color: #e52528; }
+  .choices { display: flex; flex-wrap: wrap; gap: 8px; }
+  .choices label { border: 1px solid #d5d8dc; border-radius: 6px; padding: 9px 14px; cursor: pointer; font-size: 14px; }
+  .choices label:has(input:checked) { border-color: #346aff; background: #f2f6ff; color: #346aff; font-weight: 700; }
+  .choices input { display: none; }
+  .likert { display: flex; gap: 6px; }
+  .likert label { flex: 1; text-align: center; border: 1px solid #d5d8dc; border-radius: 6px; padding: 10px 0; cursor: pointer; font-size: 14px; }
+  .likert label:has(input:checked) { border-color: #346aff; background: #346aff; color: #fff; font-weight: 700; }
+  .likert input { display: none; }
+  .ends { display: flex; justify-content: space-between; font-size: 12px; color: #888; margin-top: 4px; }
+  input[type=range] { width: 100%; accent-color: #346aff; }
+  .range-val { text-align: center; font-weight: 700; color: #346aff; font-size: 14px; }
+  .range-val.untouched { color: #aaa; font-weight: 400; }
+  .notice { background: #f8f9fb; border-radius: 8px; padding: 14px 16px; font-size: 14px; color: #444; margin-bottom: 16px; }
+  .notice li { margin: 4px 0; }
+  .agree { display: flex; gap: 8px; align-items: flex-start; font-weight: 600; cursor: pointer; }
+  .nav { display: flex; justify-content: space-between; margin-top: 22px; gap: 10px; }
+  button { border: 0; border-radius: 8px; padding: 13px 22px; font-size: 15px; font-weight: 700; cursor: pointer; background: #346aff; color: #fff; }
+  button.ghost { background: #fff; color: #555; border: 1px solid #ccc; }
+  button:disabled { background: #aac0ff; cursor: default; }
+  .err { color: #e52528; font-size: 14px; margin-top: 12px; }
+  .done { text-align: center; padding: 30px 0; }
+  .done b { font-size: 26px; letter-spacing: 1px; color: #346aff; display: block; margin: 8px 0; }
 </style>
 </head>
 <body>
-
-<div class="topbar">
-  <div class="wrap">
-    <div class="links"><a href="#" style="margin-left:0">즐겨찾기</a><a href="#">입점신청 ▾</a></div>
-    <div class="links"><a href="#">로그인</a><a href="#">회원가입</a><a href="#">고객센터</a></div>
-  </div>
+<div class="wrap">
+  <div class="bar"><i id="bar"></i></div>
+  <div class="card" id="card"></div>
 </div>
-
-<header>
-  <div class="wrap">
-    <button class="cat-btn">
-      <div class="bars"><span></span><span></span><span></span></div>카테고리
-      <div class="cat-menu" id="catMenu"></div>
-    </button>
-    <a href="#" class="logo"><span>c</span><span>l</span><span>o</span><span>n</span><span>e</span><span>pang</span><small>실습용 클론</small></a>
-    <form class="search" id="searchForm">
-      <select id="searchCat"><option value="">전체</option></select>
-      <input id="q" placeholder="찾고 싶은 상품을 검색해보세요!">
-      <button type="submit">🔍</button>
-    </form>
-    <div class="icons">
-      <a href="#"><span class="ic">👤</span>마이쿠팡</a>
-      <a href="#" class="cart-open" id="cartBtn"><span class="ic">🛒</span>장바구니<span class="badge" id="cartCount">0</span></a>
-    </div>
-  </div>
-</header>
-
-<nav class="gnb">
-  <div class="wrap">
-    <a href="#" class="rocket">🚀 로켓배송</a><a href="#">🥬 로켓프레시</a><a href="#">2026 추석 선물</a><a href="#">골드박스</a><a href="#">로켓직구</a><a href="#">이벤트/쿠폰</a><a href="#">기획전</a>
-  </div>
-</nav>
-
-<section class="banner" id="banner">
-  <div class="dots" id="dots"></div>
-</section>
-
-<main class="wrap">
-  <div class="quick" id="quick"></div>
-
-  <section class="sec">
-    <div class="sec-title"><h3>오늘의 <em>골드박스</em> ⏰ <span id="timer" style="font-size:16px;color:#e52528"></span></h3><a href="#">더보기 ›</a></div>
-    <div class="grid" id="goldbox"></div>
-  </section>
-
-  <section class="sec">
-    <div class="sec-title"><h3 id="mainTitle">오늘의 추천 상품</h3><a href="#" id="resetFilter">전체보기 ›</a></div>
-    <div class="grid" id="products"></div>
-  </section>
-</main>
-
-<aside class="cart" id="cart">
-  <h4>장바구니 <button id="cartClose">✕</button></h4>
-  <div class="cart-list" id="cartList"></div>
-  <div class="cart-foot">
-    <div class="sum"><span>총 결제금액</span><b id="cartSum">0원</b></div>
-    <button class="buy" id="buyBtn">구매하기</button>
-  </div>
-</aside>
-<div class="overlay" id="overlay"></div>
-<div class="toast" id="toast"></div>
-
-<footer>
-  <div class="wrap">
-    <div class="links"><a href="#">회사소개</a><a href="#">이용약관</a><a href="#"><b>개인정보처리방침</b></a><a href="#">고객센터</a></div>
-    본 페이지는 쿠팡 UI를 참고해 만든 <b>실습용 클론</b>이며, 실제 쿠팡과 관련이 없습니다.<br>
-    모든 상품·가격·데이터는 가상입니다.
-  </div>
-</footer>
-
+<script src="survey-config.js"></script>
 <script>
-const CATS = [
-  ["패션의류","👕"],["뷰티","💄"],["출산/유아","🍼"],["식품","🍎"],["주방용품","🍳"],
-  ["생활용품","🧻"],["가전디지털","💻"],["스포츠","⚽"],["도서","📚"],["반려동물","🐶"]
-];
-const PRODUCTS = [
-  {id:1,name:"애플 2026 맥북 에어 13 M5 16GB 512GB",cat:"가전디지털",e:"💻",price:1590000,rate:12,rocket:true,stars:4.9,rev:3821},
-  {id:2,name:"삼다수 2L x 12병 생수",cat:"식품",e:"💧",price:11900,rate:18,rocket:true,stars:4.8,rev:128402},
-  {id:3,name:"하기스 네이처메이드 기저귀 4단계 대형 128매",cat:"출산/유아",e:"🍼",price:48900,rate:22,rocket:true,stars:4.9,rev:20311},
-  {id:4,name:"나이키 에어맥스 운동화 남녀공용",cat:"패션의류",e:"👟",price:119000,rate:30,rocket:false,stars:4.6,rev:912},
-  {id:5,name:"곰곰 무항생제 신선한 대란 30구",cat:"식품",e:"🥚",price:8990,rate:5,rocket:true,stars:4.7,rev:55210},
-  {id:6,name:"코멧 3겹 데코 롤화장지 30m x 30롤",cat:"생활용품",e:"🧻",price:15900,rate:35,rocket:true,stars:4.8,rev:98123},
-  {id:7,name:"테팔 인덕션 프라이팬 28cm",cat:"주방용품",e:"🍳",price:32900,rate:41,rocket:true,stars:4.7,rev:7120},
-  {id:8,name:"닥터지 레드 블레미쉬 수딩 크림 70ml",cat:"뷰티",e:"🧴",price:19800,rate:27,rocket:true,stars:4.8,rev:30444},
-  {id:9,name:"요넥스 배드민턴 라켓 세트",cat:"스포츠",e:"🏸",price:45900,rate:15,rocket:false,stars:4.5,rev:402},
-  {id:10,name:"로얄캐닌 미니 어덜트 강아지 사료 3kg",cat:"반려동물",e:"🐶",price:36900,rate:10,rocket:true,stars:4.9,rev:15520},
-  {id:11,name:"소니 WH-1000XM6 노이즈캔슬링 헤드폰",cat:"가전디지털",e:"🎧",price:459000,rate:8,rocket:true,stars:4.8,rev:2210},
-  {id:12,name:"세이노의 가르침 (양장본)",cat:"도서",e:"📕",price:7200,rate:10,rocket:true,stars:4.9,rev:8811},
-  {id:13,name:"탐사 프리미엄 고양이 모래 10L x 3개",cat:"반려동물",e:"🐱",price:21900,rate:20,rocket:true,stars:4.6,rev:6623},
-  {id:14,name:"곰곰 국내산 한우 1등급 불고기 500g",cat:"식품",e:"🥩",price:24900,rate:13,rocket:true,stars:4.7,rev:4102},
-  {id:15,name:"무지 오버핏 후드티 기모 남녀공용",cat:"패션의류",e:"🧥",price:29900,rate:52,rocket:false,stars:4.4,rev:1820},
-  {id:16,name:"삼성 갤럭시 버즈4 프로",cat:"가전디지털",e:"🎵",price:239000,rate:19,rocket:true,stars:4.7,rev:5531},
-  {id:17,name:"락앤락 유리 밀폐용기 10종 세트",cat:"주방용품",e:"🥡",price:27900,rate:38,rocket:true,stars:4.8,rev:11902},
-  {id:18,name:"아이깨끗해 핸드워시 리필 450ml x 6",cat:"생활용품",e:"🧼",price:13900,rate:25,rocket:true,stars:4.9,rev:40012},
-  {id:19,name:"요가매트 TPE 8mm 논슬립",cat:"스포츠",e:"🧘",price:18900,rate:44,rocket:true,stars:4.6,rev:3302},
-  {id:20,name:"롬앤 쥬시 래스팅 틴트",cat:"뷰티",e:"💋",price:9900,rate:23,rocket:true,stars:4.8,rev:22310},
-];
-const SLIDES = [
-  ["linear-gradient(120deg,#346aff,#6a8dff)","로켓배송 최대 50% 할인","오늘 밤 12시 전 주문 시 내일 도착","🚀"],
-  ["linear-gradient(120deg,#ff7a45,#ffb347)","추석 선물 대전","한우·과일·건강식품 특가","🎁"],
-  ["linear-gradient(120deg,#17a673,#57d9a3)","로켓프레시 첫 구매","신선식품 새벽배송 무료","🥬"],
-  ["linear-gradient(120deg,#8e44ad,#c86dd7)","가전디지털 위크","최신 노트북·이어폰 특가","💻"],
-];
+const card = document.getElementById("card");
+const answers = {};
+let step = -1; // -1 = 안내·동의
 
-const won = n => n.toLocaleString("ko-KR") + "원";
-const $ = id => document.getElementById(id);
-const tomorrow = (() => { const d = new Date(); d.setDate(d.getDate()+1); return `내일(${"일월화수목금토"[d.getDay()]}) ${d.getMonth()+1}/${d.getDate()} 도착 보장`; })();
-
-// 카테고리
-$("catMenu").innerHTML = CATS.map(([c,e]) => `<a href="#" data-cat="${c}">${e} ${c}</a>`).join("");
-$("quick").innerHTML = CATS.map(([c,e]) => `<a href="#" data-cat="${c}"><div class="q">${e}</div>${c}</a>`).join("");
-$("searchCat").innerHTML += CATS.map(([c]) => `<option>${c}</option>`).join("");
-document.querySelectorAll("[data-cat]").forEach(a => a.onclick = ev => { ev.preventDefault(); render({cat:a.dataset.cat}); });
-
-// 배너
-$("banner").insertAdjacentHTML("afterbegin", SLIDES.map(([bg,t,s,e],i) =>
-  `<div class="slide${i?"":" on"}" style="background:${bg}"><div><h2>${t}</h2><p>${s}</p></div><div class="emoji">${e}</div></div>`).join(""));
-$("dots").innerHTML = SLIDES.map((_,i) => `<button class="${i?"":"on"}" data-i="${i}"></button>`).join("");
-let cur = 0;
-function go(i){ cur=i; document.querySelectorAll(".slide").forEach((s,j)=>s.classList.toggle("on",j===i)); document.querySelectorAll(".dots button").forEach((d,j)=>d.classList.toggle("on",j===i)); }
-$("dots").onclick = e => e.target.dataset.i && go(+e.target.dataset.i);
-setInterval(() => go((cur+1)%SLIDES.length), 4000);
-
-// 상품 카드
-function card(p){
-  const sale = Math.round(p.price*(1-p.rate/100)/10)*10;
-  return `<div class="item">
-    <div class="thumb">${p.e}</div>
-    <div class="name">${p.name}</div>
-    <div class="price-row"><span class="rate">${p.rate}%</span><span class="orig">${won(p.price)}</span></div>
-    <div class="price">${won(sale)}</div>
-    ${p.rocket ? `<div class="rocket-tag">🚀 로켓배송</div><div class="deliv">${tomorrow}</div>` : `<div class="deliv" style="color:#777">무료배송</div>`}
-    <div class="stars">${"★".repeat(Math.round(p.stars))}<span> (${p.rev.toLocaleString()})</span></div>
-    <button class="add" data-id="${p.id}">장바구니 담기</button>
-  </div>`;
+function render() {
+  document.getElementById("bar").style.width = `${((step + 1) / (SURVEY.length + 1)) * 100}%`;
+  if (step < 0) return renderIntro();
+  const sec = SURVEY[step];
+  card.innerHTML = `<h1>${sec.title}</h1><div class="desc">${sec.desc || ""}</div>
+    ${sec.questions.map(q => `<div class="q" data-id="${q.id}"><div class="q-text">${q.text}</div>${field(q)}</div>`).join("")}
+    <div class="err" id="err"></div>
+    <div class="nav"><button class="ghost" id="prev">이전</button><button id="next">${step === SURVEY.length - 1 ? "설문 완료하고 시작하기" : "다음"}</button></div>`;
+  card.querySelectorAll("input").forEach(el => el.addEventListener("input", () => {
+    const id = el.name;
+    answers[id] = el.type === "range" ? +el.value : el.value;
+    if (el.type === "range") { const v = card.querySelector(`[data-val="${id}"]`); v.textContent = el.value; v.classList.remove("untouched"); }
+    el.closest(".q").classList.remove("missing");
+  }));
+  document.getElementById("prev").onclick = () => { step--; render(); scrollTo(0, 0); };
+  document.getElementById("next").onclick = next;
 }
-function render({cat="", q=""} = {}){
-  let list = PRODUCTS.filter(p => (!cat || p.cat===cat) && (!q || p.name.toLowerCase().includes(q.toLowerCase())));
-  $("mainTitle").textContent = q ? `'${q}' 검색결과 (${list.length})` : cat ? `${cat} 인기상품` : "오늘의 추천 상품";
-  $("products").innerHTML = list.length ? list.map(card).join("") : `<div class="empty" style="grid-column:1/-1">검색 결과가 없습니다.</div>`;
-  if (cat || q) $("mainTitle").scrollIntoView({behavior:"smooth", block:"start"});
+
+function field(q) {
+  const v = answers[q.id];
+  if (q.type === "choice")
+    return `<div class="choices">${q.options.map(o => `<label><input type="radio" name="${q.id}" value="${o}" ${v === o ? "checked" : ""}>${o}</label>`).join("")}</div>`;
+  if (q.type === "likert")
+    return `<div class="likert">${Array.from({ length: q.points }, (_, i) => i + 1).map(n =>
+      `<label><input type="radio" name="${q.id}" value="${n}" ${+v === n ? "checked" : ""}>${n}</label>`).join("")}</div>
+      <div class="ends"><span>${q.left}</span><span>${q.right}</span></div>`;
+  if (q.type === "slider")
+    return `<input type="range" name="${q.id}" min="0" max="100" value="${v ?? 50}">
+      <div class="range-val ${v == null ? "untouched" : ""}" data-val="${q.id}">${v ?? "막대를 움직여 주세요"}</div>
+      <div class="ends"><span>${q.left}</span><span>${q.right}</span></div>`;
 }
-$("goldbox").innerHTML = [...PRODUCTS].sort((a,b)=>b.rate-a.rate).slice(0,5).map(card).join("");
+
+function renderIntro() {
+  card.innerHTML = `<h1>쇼핑 경험 연구에 참여해 주셔서 감사합니다</h1>
+    <div class="desc">시작하기 전에 짧은 설문(약 2~3분)에 답해 주세요.</div>
+    <div class="notice"><ul style="margin:0;padding-left:18px">
+      <li>이름·연락처·계정 정보는 수집하지 않으며, 응답은 무작위 연구 ID로만 저장됩니다.</li>
+      <li>설문 후 쇼핑 화면으로 이동합니다. 이동한 화면에서의 행동(화면 이동, 장바구니 등)이 연구용으로 기록될 수 있습니다.</li>
+      <li>언제든 참여를 그만둘 수 있으며, 그만두어도 불이익은 없습니다.</li>
+    </ul></div>
+    <label class="agree"><input type="checkbox" id="agree"> 위 내용을 읽었고 연구 참여에 동의합니다.</label>
+    <div class="err" id="err"></div>
+    <div class="nav"><span></span><button id="next">설문 시작</button></div>`;
+  document.getElementById("next").onclick = () => {
+    if (!document.getElementById("agree").checked) return document.getElementById("err").textContent = "동의에 체크해 주세요.";
+    answers.consent = "yes"; step = 0; render(); scrollTo(0, 0);
+  };
+}
+
+function next() {
+  const missing = SURVEY[step].questions.filter(q => answers[q.id] == null);
+  missing.forEach(q => card.querySelector(`[data-id="${q.id}"]`).classList.add("missing"));
+  if (missing.length) {
+    document.getElementById("err").textContent = `빨간색 문항 ${missing.length}개에 답해 주세요.`;
+    return card.querySelector(".missing").scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+  if (step < SURVEY.length - 1) { step++; render(); return scrollTo(0, 0); }
+  submit();
+}
+
+async function submit() {
+  const btn = document.getElementById("next");
+  btn.disabled = true; btn.textContent = "저장 중…";
+  try {
+    const r = await fetch("/api/start", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ answers: { ...answers, survey_submitted_at: new Date().toISOString() } }) });
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    try { localStorage.setItem("study-pid", d.pid); } catch {}
+    document.getElementById("bar").style.width = "100%";
+    card.innerHTML = `<div class="done">설문이 저장되었습니다. 연구 ID<b>${d.pid}</b>잠시 후 쇼핑 화면으로 이동합니다…</div>`;
+    setTimeout(() => location.href = d.redirect, 2000);
+  } catch (e) {
+    btn.disabled = false; btn.textContent = "다시 시도";
+    document.getElementById("err").textContent = "저장하지 못했습니다. 연구 서버(python3 server.py)가 켜져 있는지 확인해 주세요.";
+  }
+}
+
 render();
-$("resetFilter").onclick = e => { e.preventDefault(); $("q").value=""; render(); };
-$("searchForm").onsubmit = e => { e.preventDefault(); render({cat:$("searchCat").value, q:$("q").value.trim()}); };
-
-// 골드박스 타이머
-setInterval(() => { const n=new Date(), end=new Date(n); end.setHours(24,0,0,0); const s=Math.floor((end-n)/1000);
-  $("timer").textContent = [s/3600,s%3600/60,s%60].map(x=>String(Math.floor(x)).padStart(2,"0")).join(":") + " 남음"; }, 1000);
-
-// 장바구니 (localStorage)
-let cart = {};
-try { cart = JSON.parse(localStorage.getItem("clonepang-cart")) || {}; } catch {}
-const save = () => { try { localStorage.setItem("clonepang-cart", JSON.stringify(cart)); } catch {} };
-const salePrice = p => Math.round(p.price*(1-p.rate/100)/10)*10;
-function drawCart(){
-  const ids = Object.keys(cart);
-  $("cartCount").textContent = ids.reduce((s,id)=>s+cart[id],0);
-  $("cartList").innerHTML = ids.length ? ids.map(id => { const p = PRODUCTS.find(x=>x.id==id);
-    return `<div class="ci"><div class="e">${p.e}</div><div class="info">${p.name}<b>${won(salePrice(p)*cart[id])}</b></div>
-      <div class="qty"><button data-d="-1" data-id="${id}">−</button><span>${cart[id]}</span><button data-d="1" data-id="${id}">+</button></div></div>`; }).join("")
-    : `<div class="empty">장바구니에 담긴 상품이 없습니다.</div>`;
-  $("cartSum").textContent = won(ids.reduce((s,id)=>s+salePrice(PRODUCTS.find(x=>x.id==id))*cart[id],0));
-}
-function toast(msg){ $("toast").textContent=msg; $("toast").classList.add("on"); clearTimeout(toast.t); toast.t=setTimeout(()=>$("toast").classList.remove("on"),1600); }
-document.addEventListener("click", e => {
-  const b = e.target.closest(".add"); if (!b) return;
-  cart[b.dataset.id] = (cart[b.dataset.id]||0)+1; save(); drawCart(); toast("장바구니에 상품을 담았습니다 🛒");
-});
-$("cartList").onclick = e => { const id=e.target.dataset.id; if(!id) return; cart[id]+= +e.target.dataset.d; if(cart[id]<=0) delete cart[id]; save(); drawCart(); };
-const openCart = v => { $("cart").classList.toggle("open",v); $("overlay").classList.toggle("on",v); };
-$("cartBtn").onclick = e => { e.preventDefault(); openCart(true); };
-$("cartClose").onclick = $("overlay").onclick = () => openCart(false);
-$("buyBtn").onclick = () => { if(!Object.keys(cart).length) return toast("장바구니가 비어있어요");
-  cart = {}; save(); drawCart(); openCart(false); toast("주문 완료! (가상 주문입니다) 🎉"); };
-drawCart();
 </script>
 </body>
 </html>

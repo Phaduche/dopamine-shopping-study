@@ -1,160 +1,120 @@
 // ============================================================
-// 표준 상품 풀 (v6 §6.3)
+// 데모 쇼핑몰 상품 풀 (60종 · 쿠팡형 카테고리 10개)
 // ------------------------------------------------------------
-// - 가격/크기가 유사한 소액 비필수 상품 20종
-// - 문구, 소형 생활용품, 액세서리 등 안전 품목
-// - 식품/화장품/알레르기 위험/연령제한 품목 제외
-// - 실제 쇼핑몰 브랜드·상표·상품사진을 사용하지 않음 → 연구용 가상 브랜드 + 자체 생성 썸네일
-// - 상품 이미지는 외부 URL이 아니라 코드로 생성되는 색상 썸네일을 사용(저작권 안전)
-//
-// 파일럿에서 매력도/친숙도/선택편중을 확인해 최종 풀을 확정한다(§6.3).
-// 아래 price는 '연구용 가격 범주'를 표현하기 위한 표시값이며 실제 결제와 무관하다.
+// - p01~p20: 연구계획서 v6 §6.3 기준 실험 상품(문구·소형 생활용품·액세서리). 그대로 유지
+// - p21~p60: 실제 쇼핑몰처럼 보이게 하는 채움용 상품 (식품·화장품 포함)
+//   ※ R조건(실물 배송)에서 쓰는 상품은 p01~p20 안에서 고른다
+// - 브랜드는 모두 가상 브랜드. 사진은 shop/img/<id>.jpg (오픈 라이선스, shop/img/CREDITS.md 참고)
+// - price는 표시값이며 실제 결제와 무관하다
 // ============================================================
 
 const CATEGORIES = [
   { id: 'all', name: '전체' },
-  { id: 'stationery', name: '문구' },
-  { id: 'living', name: '생활소품' },
-  { id: 'desk', name: '데스크' },
-  { id: 'accessory', name: '액세서리' },
-  { id: 'organize', name: '정리수납' },
+  { id: 'fashion', name: '패션의류/잡화' },
+  { id: 'beauty', name: '뷰티' },
+  { id: 'food', name: '식품' },
+  { id: 'kitchen', name: '주방용품' },
+  { id: 'living', name: '생활용품' },
+  { id: 'interior', name: '홈인테리어' },
+  { id: 'digital', name: '가전디지털' },
+  { id: 'sports', name: '스포츠/레저' },
+  { id: 'stationery', name: '문구/오피스' },
+  { id: 'pet', name: '반려동물용품' },
 ]
 
 // 가상 브랜드명 (실제 브랜드 아님)
 const V = {
-  dot: '도트랩',
-  mori: '모리',
-  nook: '누크',
-  piel: '피엘',
-  gom: '곰손',
+  dot: '도트랩', mori: '모리', nook: '누크', piel: '피엘', gom: '곰손',
+  haru: '하루', onda: '온다', bom: '봄날', seol: '설레', dam: '담다',
 }
 
-// 썸네일: 이모지 + 배경색으로 코드 생성 (외부 이미지 미사용)
-function thumb(emoji, bg) {
-  return { emoji, bg }
-}
+const P = (id, name, brand, category, price, listPrice, rating, reviews, rocket, desc) =>
+  ({ id, name, brand, category, price, listPrice, rating, reviews, rocket, desc })
 
 const PRODUCTS = [
-  {
-    id: 'p01', name: '파스텔 무지 노트 (A5 · 80매)', brand: V.dot, category: 'stationery',
-    price: 3900, listPrice: 5500, rating: 4.8, reviews: 1243, rocket: true,
-    thumb: thumb('📓', '#FDE68A'),
-    desc: '부드러운 미색 내지의 무지 노트. 필기와 드로잉 모두에 적합합니다.',
-  },
-  {
-    id: 'p02', name: '젤 볼펜 5색 세트 (0.4mm)', brand: V.mori, category: 'stationery',
-    price: 4200, listPrice: 6000, rating: 4.7, reviews: 2890, rocket: true,
-    thumb: thumb('🖊️', '#BFDBFE'),
-    desc: '번짐 없는 빠른 건조 잉크. 다섯 가지 차분한 색상 구성.',
-  },
-  {
-    id: 'p03', name: '떡메모지 (사각 · 100매)', brand: V.dot, category: 'stationery',
-    price: 2800, listPrice: 3500, rating: 4.6, reviews: 764, rocket: true,
-    thumb: thumb('🗒️', '#FBCFE8'),
-    desc: '한 장씩 떼어 쓰는 메모지. 데스크 정리와 할 일 메모에 좋아요.',
-  },
-  {
-    id: 'p04', name: '미니 데스크 정리 트레이', brand: V.nook, category: 'desk',
-    price: 5900, listPrice: 8900, rating: 4.5, reviews: 538, rocket: true,
-    thumb: thumb('🗂️', '#C7D2FE'),
-    desc: '펜, 클립, 메모를 한 곳에. 책상 위 작은 정돈을 도와줍니다.',
-  },
-  {
-    id: 'p05', name: '실리콘 접이식 컵', brand: V.piel, category: 'living',
-    price: 4500, listPrice: 7000, rating: 4.4, reviews: 412, rocket: false,
-    thumb: thumb('🥤', '#A7F3D0'),
-    desc: '휴대하기 좋은 접이식 컵. 가볍고 세척이 간편합니다.',
-  },
-  {
-    id: 'p06', name: '마스킹 테이프 3롤 세트', brand: V.mori, category: 'stationery',
-    price: 3600, listPrice: 4800, rating: 4.7, reviews: 1655, rocket: true,
-    thumb: thumb('🎀', '#FECACA'),
-    desc: '다이어리 꾸미기와 라벨링에 쓰기 좋은 파스텔 패턴 3종.',
-  },
-  {
-    id: 'p07', name: '손목 받침 마우스패드', brand: V.gom, category: 'desk',
-    price: 6900, listPrice: 9900, rating: 4.6, reviews: 980, rocket: true,
-    thumb: thumb('🖱️', '#DDD6FE'),
-    desc: '쿠션 손목 받침으로 장시간 작업의 피로를 줄여줍니다.',
-  },
-  {
-    id: 'p08', name: '미니 무드등 (USB)', brand: V.nook, category: 'living',
-    price: 7500, listPrice: 11000, rating: 4.5, reviews: 623, rocket: true,
-    thumb: thumb('💡', '#FEF3C7'),
-    desc: '은은한 조도의 USB 무드등. 책상과 침대 옆 조명으로.',
-  },
-  {
-    id: 'p09', name: '키링 파우치 (카드수납)', brand: V.piel, category: 'accessory',
-    price: 5200, listPrice: 7900, rating: 4.3, reviews: 287, rocket: false,
-    thumb: thumb('👝', '#FBCFE8'),
-    desc: '교통카드와 동전을 담는 작은 키링 파우치.',
-  },
-  {
-    id: 'p10', name: '패브릭 헤어밴드 2개입', brand: V.mori, category: 'accessory',
-    price: 3300, listPrice: 4500, rating: 4.4, reviews: 519, rocket: true,
-    thumb: thumb('🎗️', '#C7F9CC'),
-    desc: '세안·홈케어용 부드러운 헤어밴드. 두 가지 색 구성.',
-  },
-  {
-    id: 'p11', name: '접이식 독서 받침대', brand: V.gom, category: 'desk',
-    price: 8900, listPrice: 13000, rating: 4.7, reviews: 1104, rocket: true,
-    thumb: thumb('📚', '#BAE6FD'),
-    desc: '각도 조절이 되는 휴대용 독서/태블릿 받침대.',
-  },
-  {
-    id: 'p12', name: '케이블 정리 클립 6개', brand: V.nook, category: 'organize',
-    price: 2900, listPrice: 4000, rating: 4.5, reviews: 2011, rocket: true,
-    thumb: thumb('🔌', '#E9D5FF'),
-    desc: '책상 위 충전 케이블을 깔끔하게 고정하는 접착식 클립.',
-  },
-  {
-    id: 'p13', name: '미니 탁상 달력 (만년)', brand: V.dot, category: 'desk',
-    price: 4800, listPrice: 6500, rating: 4.6, reviews: 348, rocket: false,
-    thumb: thumb('📅', '#FDE68A'),
-    desc: '연도에 상관없이 쓰는 원목 블록 만년 달력.',
-  },
-  {
-    id: 'p14', name: '폭신 슬리퍼 (실내용)', brand: V.piel, category: 'living',
-    price: 7900, listPrice: 11900, rating: 4.4, reviews: 742, rocket: true,
-    thumb: thumb('🥿', '#FBCFE8'),
-    desc: '푹신한 쿠션감의 실내 슬리퍼. 미끄럼 방지 밑창.',
-  },
-  {
-    id: 'p15', name: '투명 필통 (지퍼형)', brand: V.mori, category: 'stationery',
-    price: 3400, listPrice: 4500, rating: 4.5, reviews: 889, rocket: true,
-    thumb: thumb('✏️', '#BFDBFE'),
-    desc: '내용물이 보이는 투명 지퍼 필통. 넉넉한 수납.',
-  },
-  {
-    id: 'p16', name: '미니 공기 식물 화분', brand: V.nook, category: 'living',
-    price: 6200, listPrice: 8500, rating: 4.3, reviews: 194, rocket: false,
-    thumb: thumb('🪴', '#BBF7D0'),
-    desc: '관리가 쉬운 소형 공기정화 식물(조화 포함 옵션).',
-  },
-  {
-    id: 'p17', name: '자석 북마크 4개 세트', brand: V.dot, category: 'stationery',
-    price: 2600, listPrice: 3500, rating: 4.7, reviews: 1322, rocket: true,
-    thumb: thumb('🔖', '#FECDD3'),
-    desc: '페이지를 집어 고정하는 자석 북마크. 책 손상 없이 사용.',
-  },
-  {
-    id: 'p18', name: '손거울 (접이식 스탠드)', brand: V.piel, category: 'accessory',
-    price: 5500, listPrice: 7900, rating: 4.4, reviews: 406, rocket: true,
-    thumb: thumb('🪞', '#DDD6FE'),
-    desc: '세워서 쓰는 접이식 탁상 손거울. 휴대용 파우치 포함.',
-  },
-  {
-    id: 'p19', name: '다용도 정리 바구니 (소)', brand: V.gom, category: 'organize',
-    price: 4100, listPrice: 5500, rating: 4.6, reviews: 1577, rocket: true,
-    thumb: thumb('🧺', '#A5F3FC'),
-    desc: '책상, 서랍, 욕실 어디든 쓰는 소형 정리 바구니.',
-  },
-  {
-    id: 'p20', name: '라운드 코스터 4p', brand: V.nook, category: 'living',
-    price: 3900, listPrice: 5200, rating: 4.5, reviews: 611, rocket: false,
-    thumb: thumb('🟤', '#FED7AA'),
-    desc: '테이블을 보호하는 펠트 코스터 4개입. 두 가지 톤.',
-  },
+  // ── 실험 상품 (p01~p20) ──────────────────────────────────
+  P('p01', '파스텔 무지 노트 (A5 · 80매)', V.dot, 'stationery', 3900, 5500, 4.8, 1243, true, '부드러운 미색 내지의 무지 노트. 필기와 드로잉 모두에 적합합니다.'),
+  P('p02', '젤 볼펜 5색 세트 (0.4mm)', V.mori, 'stationery', 4200, 6000, 4.7, 2890, true, '번짐 없는 빠른 건조 잉크. 다섯 가지 차분한 색상 구성.'),
+  P('p03', '떡메모지 (사각 · 100매)', V.dot, 'stationery', 2800, 3500, 4.6, 764, true, '한 장씩 떼어 쓰는 메모지. 데스크 정리와 할 일 메모에 좋아요.'),
+  P('p04', '미니 데스크 정리 트레이', V.nook, 'stationery', 5900, 8900, 4.5, 538, true, '펜, 클립, 메모를 한 곳에. 책상 위 작은 정돈을 도와줍니다.'),
+  P('p05', '실리콘 접이식 컵', V.piel, 'kitchen', 4500, 6500, 4.4, 412, true, '접으면 손바닥 크기. 가방에 넣어 다니는 휴대용 컵.'),
+  P('p06', '마스킹 테이프 3롤 세트', V.mori, 'stationery', 3600, 4800, 4.7, 1530, true, '은은한 색감의 마스킹 테이프. 다이어리 꾸미기에 좋아요.'),
+  P('p07', '손목 받침 마우스패드', V.gom, 'digital', 6900, 9900, 4.6, 2210, true, '푹신한 손목 받침이 있는 마우스패드. 장시간 사용에도 편안합니다.'),
+  P('p08', '미니 무드등 (USB)', V.nook, 'interior', 7500, 11000, 4.8, 3120, true, '따뜻한 빛의 USB 무드등. 침대 옆이나 책상 위에.'),
+  P('p09', '키링 파우치 (카드수납)', V.piel, 'fashion', 5200, 7500, 4.5, 880, true, '카드 두 장과 동전이 들어가는 작은 파우치. 열쇠고리 겸용.'),
+  P('p10', '패브릭 헤어밴드 2개입', V.mori, 'fashion', 3300, 4500, 4.3, 356, false, '부드러운 면 소재 헤어밴드. 세안할 때, 집에서 편하게.'),
+  P('p11', '접이식 독서 받침대', V.gom, 'stationery', 8900, 12900, 4.7, 1104, true, '각도 조절이 되는 독서대. 책과 태블릿 모두 올릴 수 있어요.'),
+  P('p12', '케이블 정리 클립 6개', V.nook, 'digital', 2900, 4000, 4.4, 1992, true, '책상 가장자리에 붙여 케이블을 깔끔하게 정리.'),
+  P('p13', '미니 탁상 달력 (만년)', V.dot, 'stationery', 4800, 6500, 4.6, 472, true, '날짜 블록을 돌려 쓰는 만년 달력. 작고 단정한 디자인.'),
+  P('p14', '폭신 슬리퍼 (실내용)', V.piel, 'living', 7900, 11900, 4.5, 742, true, '푹신한 바닥의 실내 슬리퍼. 조용하고 따뜻합니다.'),
+  P('p15', '투명 필통 (지퍼형)', V.mori, 'stationery', 3400, 4500, 4.4, 689, true, '안이 보이는 투명 필통. 필기구를 한눈에.'),
+  P('p16', '미니 공기 식물 화분', V.nook, 'interior', 6200, 8500, 4.6, 523, true, '손이 덜 가는 작은 식물과 화분 세트. 책상 위 초록 한 점.'),
+  P('p17', '자석 북마크 4개 세트', V.dot, 'stationery', 2600, 3500, 4.5, 831, true, '자석으로 집는 북마크. 책에 자국이 남지 않아요.'),
+  P('p18', '손거울 (접이식 스탠드)', V.piel, 'beauty', 5500, 7900, 4.4, 298, false, '접어서 세우는 손거울. 가방에도 책상 위에도.'),
+  P('p19', '다용도 정리 바구니 (소)', V.gom, 'living', 4100, 5900, 4.5, 1016, true, '서랍 속, 선반 위 작은 물건 정리용 바구니.'),
+  P('p20', '라운드 코스터 4p', V.nook, 'interior', 3900, 5200, 4.5, 611, false, '테이블을 보호하는 펠트 코스터 4개입. 두 가지 톤.'),
+
+  // ── 패션의류/잡화 ───────────────────────────────────────
+  P('p21', '베이직 면 티셔츠 (남녀공용)', V.haru, 'fashion', 9900, 15900, 4.6, 18420, true, '도톰한 20수 면 티셔츠. 기본 핏에 여섯 가지 색상.'),
+  P('p22', '오버핏 후드 집업', V.haru, 'fashion', 24900, 39000, 4.5, 6230, true, '기모 안감의 후드 집업. 넉넉한 오버핏.'),
+  P('p23', '스니커즈 (화이트)', V.onda, 'fashion', 29900, 49000, 4.7, 9812, true, '어디에나 어울리는 화이트 스니커즈. 가벼운 쿠션 밑창.'),
+  P('p24', '캔버스 에코백', V.piel, 'fashion', 6900, 9900, 4.4, 2310, true, '두꺼운 캔버스 천의 에코백. 노트북도 들어가는 크기.'),
+  P('p25', '니트 비니 (울 혼방)', V.haru, 'fashion', 7900, 12000, 4.5, 1544, true, '부드러운 울 혼방 비니. 겨울 기본 아이템.'),
+  P('p26', '가죽 카드지갑', V.piel, 'fashion', 12900, 19000, 4.6, 3101, true, '얇은 소가죽 카드지갑. 카드 4장과 지폐 수납.'),
+
+  // ── 뷰티 ────────────────────────────────────────────────
+  P('p27', '수분 크림 70ml', V.seol, 'beauty', 15900, 24000, 4.8, 30444, true, '끈적임 없는 수분 크림. 아침저녁 가볍게.'),
+  P('p28', '선크림 SPF50+ 50ml', V.seol, 'beauty', 11900, 18000, 4.7, 22310, true, '백탁 없는 가벼운 선크림. 매일 쓰기 좋아요.'),
+  P('p29', '립밤 2개입', V.bom, 'beauty', 5900, 8000, 4.6, 8811, true, '촉촉하게 오래가는 립밤. 무향·무색.'),
+  P('p30', '시트 마스크 10매', V.seol, 'beauty', 9900, 15000, 4.7, 41020, true, '진정 수분 시트 마스크 10장. 매일 한 장.'),
+  P('p31', '핸드크림 50ml', V.bom, 'beauty', 4900, 7000, 4.6, 12204, true, '빠르게 흡수되는 핸드크림. 은은한 향.'),
+  P('p32', '헤어 브러시 (쿠션형)', V.bom, 'beauty', 6900, 9900, 4.5, 2012, false, '두피 자극이 적은 쿠션 브러시.'),
+
+  // ── 식품 ────────────────────────────────────────────────
+  P('p33', '생수 2L x 6병', V.dam, 'food', 4980, 6600, 4.8, 128402, true, '깨끗한 암반수. 로켓배송으로 무겁게 들 필요 없어요.'),
+  P('p34', '믹스넛 500g', V.dam, 'food', 9900, 13900, 4.7, 15302, true, '아몬드·호두·캐슈넛 믹스. 매일 한 줌.'),
+  P('p35', '드립 커피 10개입', V.dam, 'food', 8900, 12000, 4.6, 7730, true, '한 잔씩 내려 마시는 드립백 커피. 고소한 미디엄 로스팅.'),
+  P('p36', '제주 감귤 3kg', V.dam, 'food', 13900, 19900, 4.5, 20110, true, '새콤달콤 제주 감귤. 신선하게 산지 직송.'),
+  P('p37', '그래놀라 500g', V.dam, 'food', 7900, 10900, 4.6, 5522, true, '바삭한 오트 그래놀라. 우유나 요거트와 함께.'),
+  P('p38', '초콜릿 바 5개입', V.bom, 'food', 5900, 7500, 4.7, 9930, true, '다크 초콜릿 바 5개. 달지 않고 진한 맛.'),
+
+  // ── 주방용품 ────────────────────────────────────────────
+  P('p39', '프라이팬 28cm (인덕션)', V.onda, 'kitchen', 19900, 32900, 4.7, 7120, true, '코팅이 오래가는 인덕션 겸용 프라이팬.'),
+  P('p40', '유리 밀폐용기 5종 세트', V.onda, 'kitchen', 17900, 27900, 4.8, 11902, true, '전자레인지 사용 가능한 유리 밀폐용기 세트.'),
+  P('p41', '머그컵 2개 세트', V.nook, 'kitchen', 8900, 12000, 4.6, 3211, true, '손에 꼭 맞는 도자기 머그 2개. 식기세척기 가능.'),
+  P('p42', '스테인리스 텀블러 500ml', V.onda, 'kitchen', 12900, 18900, 4.7, 8402, true, '보온·보냉 12시간. 가볍고 튼튼한 텀블러.'),
+  P('p43', '나무 도마 (중)', V.gom, 'kitchen', 9900, 14000, 4.5, 2109, true, '아카시아 원목 도마. 칼자국이 덜 남아요.'),
+  P('p44', '주방 가위', V.onda, 'kitchen', 5900, 8500, 4.6, 4420, true, '분리 세척 되는 주방 가위. 날이 오래 갑니다.'),
+
+  // ── 생활용품 ────────────────────────────────────────────
+  P('p45', '3겹 롤화장지 30롤', V.haru, 'living', 15900, 23900, 4.8, 98123, true, '부드러운 3겹 화장지 30롤. 한 번에 넉넉하게.'),
+  P('p46', '핸드워시 리필 450ml x 3', V.seol, 'living', 8900, 12900, 4.9, 40012, true, '순한 거품 핸드워시 리필 3개.'),
+  P('p47', '세탁세제 2.5L', V.haru, 'living', 9900, 14900, 4.7, 32100, true, '찬물에도 잘 녹는 액체 세제. 은은한 향.'),
+  P('p48', '극세사 수건 4장', V.haru, 'living', 11900, 16900, 4.6, 7812, true, '빨리 마르는 극세사 수건 4장. 두 가지 색.'),
+  P('p49', '우산 (자동 3단)', V.onda, 'living', 9900, 14000, 4.5, 5310, true, '튼튼한 살대의 자동 3단 우산.'),
+  P('p50', '빨래 바구니 (접이식)', V.gom, 'living', 7900, 11000, 4.4, 1920, true, '안 쓸 때 납작하게 접히는 빨래 바구니.'),
+
+  // ── 홈인테리어 ──────────────────────────────────────────
+  P('p51', '암막 커튼 (창문형 2장)', V.nook, 'interior', 19900, 29900, 4.6, 6402, true, '빛을 확실히 막는 암막 커튼 2장 세트.'),
+  P('p52', '러그 (거실용 150x200)', V.nook, 'interior', 29900, 45000, 4.5, 3120, true, '부드러운 단모 러그. 미끄럼 방지 바닥.'),
+  P('p53', '쿠션 커버 2개 (45x45)', V.nook, 'interior', 8900, 12900, 4.5, 2211, true, '린넨 느낌의 쿠션 커버 2개입.'),
+  P('p54', '탁상 스탠드 (LED)', V.onda, 'interior', 17900, 25900, 4.7, 4120, true, '3단계 밝기 조절 LED 스탠드. 눈이 편안해요.'),
+
+  // ── 가전디지털 ──────────────────────────────────────────
+  P('p55', '무선 이어폰', V.onda, 'digital', 39900, 69000, 4.6, 15531, true, '가볍고 또렷한 무선 이어폰. 충전 케이스 포함.'),
+  P('p56', '보조배터리 10000mAh', V.onda, 'digital', 19900, 29900, 4.7, 21204, true, '스마트폰 2회 충전. 얇고 가벼운 보조배터리.'),
+  P('p57', 'USB-C 충전 케이블 1m x 2', V.onda, 'digital', 6900, 9900, 4.6, 9834, true, '튼튼한 패브릭 피복 케이블 2개.'),
+  P('p58', '블루투스 스피커', V.onda, 'digital', 29900, 45000, 4.5, 4411, true, '손바닥 크기에 꽉 찬 소리. 12시간 재생.'),
+
+  // ── 스포츠/레저 ─────────────────────────────────────────
+  P('p59', '요가매트 6mm', V.haru, 'sports', 14900, 22000, 4.6, 8302, true, '미끄럽지 않은 요가매트. 둘둘 말아 보관.'),
+  P('p60', '배드민턴 라켓 2개 세트', V.haru, 'sports', 18900, 27000, 4.5, 2402, false, '가벼운 알루미늄 라켓 2개와 셔틀콕.'),
+
+  // ── 반려동물용품 ────────────────────────────────────────
+  P('p61', '강아지 사료 3kg', V.dam, 'pet', 24900, 34900, 4.8, 15520, true, '소형견용 건식 사료 3kg. 소화가 편해요.'),
+  P('p62', '고양이 모래 10L', V.dam, 'pet', 12900, 17900, 4.6, 6623, true, '먼지가 적은 벤토나이트 모래.'),
+  P('p63', '반려동물 장난감 공 3개', V.gom, 'pet', 5900, 8000, 4.5, 2104, true, '물어도 안전한 고무 공 3개.'),
+  P('p64', '반려동물 방석 (중형)', V.gom, 'pet', 19900, 29900, 4.7, 3310, true, '푹신한 방석. 커버 분리 세탁.'),
 ]
 
 function getProduct(id) {

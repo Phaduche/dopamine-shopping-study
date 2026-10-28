@@ -1,17 +1,19 @@
 """연구용 로컬 서버 (파이썬 표준 라이브러리만 사용, 설치 불필요).
 
-실행:  python3 server.py   →  http://localhost:8000
+실행:  python3 server.py          →  http://localhost:8000 (이 컴퓨터에서만)
+      python3 server.py --lan    →  같은 와이파이의 다른 기기(폰·태블릿)에서도 접속 가능
   /            사전 설문(T0) → 조건 배정 → 0: 데모(/shop/), 1: 실제 쿠팡
   /admin.html  연구자 콘솔 (조건 설정, 참가자 목록, CSV 다운로드)
 
 데이터는 data/study.db (SQLite)에 저장되며 git에 올라가지 않는다(.gitignore).
-서버는 127.0.0.1에만 열려 있어 같은 컴퓨터에서만 접속할 수 있다.
+--lan 으로 열면 같은 네트워크의 누구나 연구자 콘솔에도 들어올 수 있으니 실험용 와이파이에서만 쓴다.
 """
 
 import csv
 import io
 import json
 import secrets
+import socket
 import sqlite3
 import sys
 from datetime import datetime, timezone
@@ -220,8 +222,25 @@ class Handler(SimpleHTTPRequestHandler):
         return self.send_json({"error": "not found"}, 404)
 
 
+def lan_ip():
+    """이 컴퓨터의 와이파이(LAN) IP. 못 찾으면 None."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("10.255.255.255", 1))  # 실제로 보내지 않고 경로만 고른다
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except OSError:
+        return None
+
+
 if __name__ == "__main__":
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    port = int(args[0]) if args else 8000
+    lan = "--lan" in sys.argv
     init_db()
     print(f"연구 서버 실행 중: http://localhost:{port}  (연구자 콘솔: http://localhost:{port}/admin.html)")
-    ThreadingHTTPServer(("127.0.0.1", port), Handler).serve_forever()
+    if lan:
+        ip = lan_ip()
+        print(f"같은 와이파이의 다른 기기에서: http://{ip}:{port}" if ip else "와이파이 IP를 찾지 못했습니다. 시스템 설정 > 네트워크에서 IP를 확인하세요.")
+    ThreadingHTTPServer(("0.0.0.0" if lan else "127.0.0.1", port), Handler).serve_forever()

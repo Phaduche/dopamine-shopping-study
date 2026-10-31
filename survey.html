@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>쇼핑 후 설문</title>
+<link rel="stylesheet" href="survey.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="bar"><i id="bar"></i></div>
+  <div class="card" id="card"></div>
+</div>
+<script src="survey-config.js"></script>
+<script src="survey.js"></script>
+<script>
+// 쇼핑 후 설문. ?pid=연구ID 로 들어온다 (없으면 localStorage의 값을 쓴다)
+const card = document.getElementById("card"), bar = document.getElementById("bar");
+let pid = new URLSearchParams(location.search).get("pid");
+try { pid = pid || localStorage.getItem("study-pid"); } catch {}
+const TOTAL_STEPS = PRE_SURVEY.length + 1 + POST_SURVEY.length;
+
+function done(d) {
+  bar.style.width = "100%";
+  card.innerHTML = `<div class="done">${d.already ? "이미 설문을 완료하셨습니다." : "설문이 저장되었습니다. 참여해 주셔서 감사합니다!"}<b>${pid}</b>이 창을 닫으셔도 됩니다.</div>`;
+}
+
+if (!pid) {
+  card.innerHTML = `<h1>연구 ID가 없습니다</h1><div class="desc">처음 화면에서 기본 정보를 먼저 입력해 주세요.</div><div class="nav"><span></span><button onclick="location.href='/'">처음으로</button></div>`;
+} else {
+  runSurvey({
+    sections: POST_SURVEY, card, bar, stepOffset: PRE_SURVEY.length + 1, stepTotal: TOTAL_STEPS, submitLabel: "설문 완료",
+    onSubmit: async answers => {
+      const r = await fetch("/api/survey", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pid, answers: { ...answers, submitted_at: new Date().toISOString() } }) });
+      if (!r.ok) throw new Error(r.status);
+      done(await r.json());
+    },
+  });
+  card.insertAdjacentHTML("afterbegin", `<div class="steps">① 기본 정보 › ② 쇼핑 › <b>③ 설문</b></div>`);
+}
+</script>
+</body>
+</html>

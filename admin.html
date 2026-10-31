@@ -53,6 +53,7 @@
       <div class="stat">전체<b id="nAll">0</b></div>
       <div class="stat">조건 0 · 데모<b id="n0">0</b></div>
       <div class="stat">조건 1 · 실제 쿠팡<b id="n1">0</b></div>
+      <div class="stat">쇼핑 후 설문 완료<b id="nPost">0</b></div>
     </div>
   </div>
 
@@ -69,7 +70,7 @@
     <h2>참가자 목록</h2>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>연구 ID</th><th>시작 시각</th><th>조건</th><th>배정 방식</th><th>로그 수</th></tr></thead>
+        <thead><tr><th>연구 ID</th><th>시작 시각</th><th>조건</th><th>배정 방식</th><th>쇼핑 후 설문</th><th>로그 수</th></tr></thead>
         <tbody id="rows"></tbody>
       </table>
     </div>
@@ -91,10 +92,12 @@ async function load(withSettings) {
   $("nAll").textContent = ps.length;
   $("n0").textContent = ps.filter(p => p.condition === 0).length;
   $("n1").textContent = ps.filter(p => p.condition === 1).length;
+  $("nPost").textContent = ps.filter(p => p.post_at).length;
   $("rows").innerHTML = ps.length ? ps.map(p => `<tr><td>${p.pid}</td><td>${p.created_at.replace("T", " ").slice(0, 19)}</td>
     <td><span class="tag c${p.condition}">${p.condition} · ${p.condition ? "실제 쿠팡" : "데모"}</span></td>
-    <td>${p.assignment_mode === "random" ? "무작위" : "고정"}</td><td>${p.events}</td></tr>`).join("")
-    : `<tr><td colspan="5" style="color:#999;text-align:center;padding:24px">아직 참가자가 없습니다.</td></tr>`;
+    <td>${p.assignment_mode === "random" ? "무작위" : "고정"}</td>
+    <td>${p.post_at ? `완료 <span style="color:#888">${p.post_at.replace("T", " ").slice(11, 16)}</span>` : `<span style="color:#aaa">아직</span>`}</td><td>${p.events}</td></tr>`).join("")
+    : `<tr><td colspan="6" style="color:#999;text-align:center;padding:24px">아직 참가자가 없습니다.</td></tr>`;
 }
 
 $("save").onclick = async () => {

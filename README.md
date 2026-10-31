@@ -27,9 +27,12 @@ python3 server.py --lan
 
 ## 흐름
 
-1. 안내·동의 → 사전 설문 4단계 (기본 정보, 지금 기분, 구매욕구, 쇼핑 습관)
+1. 안내·동의 → **기본 정보**(학년·성별·쇼핑 빈도·용돈, 약 1분)
 2. 서버가 무작위 연구 ID(예: `P3A9F1C`)를 만들고 조건을 배정
-3. 조건 0 → 데모 쇼핑몰 `/shop/`, 조건 1 → https://www.coupang.com/
+3. **쇼핑**: 버튼을 누르면 새 탭에서 열림 — 조건 0 → 데모 쇼핑몰 `/shop/`, 조건 1 → https://www.coupang.com/
+4. 쇼핑을 마치고 원래 탭으로 돌아와 **쇼핑 후 설문**(지금 기분, 구매욕구, 쇼핑 습관, 약 2~3분) → `survey.html`
+
+쇼핑을 새 탭에서 여는 이유: 조건 1은 외부 사이트라 돌아올 길이 없으므로, 두 조건 모두 "원래 탭에 설문 버튼이 남아 있는" 같은 방식으로 맞췄습니다.
 
 ## 조건 배정 (연구자 콘솔)
 
@@ -43,8 +46,8 @@ python3 server.py --lan
 ## 데이터
 
 - 원본: `data/study.db` (SQLite) — `.gitignore`에 포함되어 git에 올라가지 않습니다.
-- `participants.csv`: 연구 ID, 시작 시각, 조건, 배정 방식, 설문 문항별 응답 (문항 id가 열 이름)
-- `events.csv`: 행동 로그 — `assigned`, `app_open`, `screen`(이전 화면 체류시간), `product_view`, `search`,
+- `participants.csv`: 연구 ID, 시작 시각, 조건, 배정 방식, 쇼핑 후 설문 제출 시각(`post_at`), 쇼핑 소요 분(`shop_minutes`), 설문 응답 (쇼핑 전 문항은 `pre_`, 쇼핑 후 문항은 `post_` 접두사)
+- `events.csv`: 행동 로그 — `assigned`, `shop_opened`, `post_survey`, `app_open`, `screen`(이전 화면 체류시간), `product_view`, `search`,
   `cart_add`, `cart_remove`, `cart_qty`, `buy_now`, `checkout_view`, `order`, `track_view`, `leave`, `return`
 - 조건 1(실제 쿠팡)로 이동한 뒤의 행동은 기록할 수 없습니다.
 
@@ -53,8 +56,10 @@ python3 server.py --lan
 | 파일 | 내용 |
 | --- | --- |
 | `server.py` | 로컬 서버 + SQLite + CSV 내보내기 |
-| `index.html` | 동의·사전 설문 화면 |
-| `survey-config.js` | 설문 문항 정의 — 문항은 이 파일만 고치면 됩니다 |
+| `index.html` | 동의 → 기본 정보 → 쇼핑 열기 화면 |
+| `survey.html` | 쇼핑 후 설문 화면 |
+| `survey-config.js` | 설문 문항 정의(`PRE_SURVEY`, `POST_SURVEY`) — 문항은 이 파일만 고치면 됩니다 |
+| `survey.js`, `survey.css` | 두 설문 화면이 같이 쓰는 렌더러·스타일 |
 | `admin.html` | 연구자 콘솔 |
 | `shop/` | 데모 쇼핑몰 (홈, 검색, 상품상세, 장바구니, 주문결제, 주문완료, 주문·배송조회) |
 

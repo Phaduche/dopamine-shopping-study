@@ -64,6 +64,11 @@ def init_db(conn=None):
             INSERT OR IGNORE INTO settings VALUES ('fixed_condition', '0');
             """
         )
+        # 예전 DB에 쇼핑 후 설문 열이 없으면 추가한다
+        cols = {r[1] for r in c.execute("PRAGMA table_info(participants)")}
+        if "post_answers" not in cols:
+            c.execute("ALTER TABLE participants ADD COLUMN post_answers TEXT")
+            c.execute("ALTER TABLE participants ADD COLUMN post_at TEXT")
 
 
 def get_settings(c):
@@ -87,20 +92,33 @@ def to_csv(header, rows):
     return buf.getvalue().encode("utf-8")
 
 
+def shop_minutes(r):
+    """조건 배정(쇼핑 시작)부터 쇼핑 후 설문 제출까지 걸린 분. 설문 전이면 빈칸."""
+    if not r["post_at"]:
+        return ""
+    delta = datetime.fromisoformat(r["post_at"]) - datetime.fromisoformat(r["created_at"])
+    return round(delta.total_seconds() / 60, 1)
+
+
 def participants_csv(c):
     rows = [dict(r) for r in c.execute("SELECT * FROM participants ORDER BY created_at")]
-    keys = []
+    pre_keys, post_keys = [], []
     for r in rows:
         for k in json.loads(r["answers"]):
-            if k not in keys:
-                keys.append(k)
-    header = ["pid", "created_at", "condition", "condition_name", "assignment_mode"] + keys
+            if k not in pre_keys:
+                pre_keys.append(k)
+        for k in json.loads(r["post_answers"] or "{}"):
+            if k not in post_keys:
+                post_keys.append(k)
+    header = (["pid", "created_at", "condition", "condition_name", "assignment_mode", "post_at", "shop_minutes"]
+              + ["pre_" + k for k in pre_keys] + ["post_" + k for k in post_keys])
     out = []
     for r in rows:
-        a = json.loads(r["answers"])
+        a, b = json.loads(r["answers"]), json.loads(r["post_answers"] or "{}")
         out.append(
-            [r["pid"], r["created_at"], r["condition"], CONDITIONS[r["condition"]], r["assignment_mode"]]
-            + [a.get(k, "") for k in keys]
+            [r["pid"], r["created_at"], r["condition"], CONDITIONS[r["condition"]], r["assignment_mode"],
+             r["post_at"] or "", shop_minutes(r)]
+            + [a.get(k, "") for k in pre_keys] + [b.get(k, "") for k in post_keys]
         )
     return to_csv(header, out)
 
@@ -168,7 +186,7 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/api/admin/summary":
             with db() as c:
                 ps = [dict(r) for r in c.execute(
-                    "SELECT p.pid, p.created_at, p.condition, p.assignment_mode,"
+                    "SELECT p.pid, p.created_at, p.condition, p.assignment_mode, p.post_at,"
                     " (SELECT COUNT(*) FROM events e WHERE e.pid = p.pid) AS events"
                     " FROM participants p ORDER BY p.created_at DESC")]
                 return self.send_json({"settings": get_settings(c), "participants": ps})
@@ -195,12 +213,29 @@ class Handler(SimpleHTTPRequestHandler):
                 cond = secrets.randbelow(2) if mode == "random" else s["fixed_condition"]
                 pid = new_pid(c)
                 ts = now()
-                c.execute("INSERT INTO participants VALUES (?,?,?,?,?)",
+                c.execute("INSERT INTO participants (pid, created_at, condition, assignment_mode, answers) VALUES (?,?,?,?,?)",
                           (pid, ts, cond, mode, json.dumps(answers, ensure_ascii=False)))
                 c.execute("INSERT INTO events (pid, ts, type, detail) VALUES (?,?,?,?)",
                           (pid, ts, "assigned", json.dumps({"condition": cond, "mode": mode})))
             target = "/shop/" if cond == 0 else REAL_SITE_URL
             return self.send_json({"pid": pid, "condition": cond, "redirect": target})
+
+        if path == "/api/survey":
+            # 쇼핑 후 설문. 같은 참가자가 두 번 보내면 첫 응답을 유지한다
+            pid = str(data.get("pid") or "")
+            answers = data.get("answers") or {}
+            with db() as c:
+                row = c.execute("SELECT post_at FROM participants WHERE pid=?", (pid,)).fetchone()
+                if not row:
+                    return self.send_json({"error": "unknown pid"}, 404)
+                if row["post_at"]:
+                    return self.send_json({"ok": True, "already": True})
+                ts = now()
+                c.execute("UPDATE participants SET post_answers=?, post_at=? WHERE pid=?",
+                          (json.dumps(answers, ensure_ascii=False), ts, pid))
+                c.execute("INSERT INTO events (pid, ts, type, detail) VALUES (?,?,?,?)",
+                          (pid, ts, "post_survey", "{}"))
+            return self.send_json({"ok": True, "already": False})
 
         if path == "/api/log":
             with db() as c:

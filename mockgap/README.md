@@ -29,6 +29,17 @@ python3 server.py --lan
 - 기출 조건: 연구자가 준비한 공통 연습 세트.
 - 배정: 번호에서 결정되는 균형 블록 배정(4명 블록, seed는 `config.json`). session-frame과 같은 규칙이라 같은 번호는 같은 조건이다.
 
+## 참가자 컴퓨터에서 서버 없이 쓰기 (실험군 로컬 묶음)
+
+```bash
+python3 mockgap/build_local.py      # → mockgap/local_bundle/ 와 mockgap/local_bundle.zip
+```
+
+- `data_local/`이 있으면 실제 문항·이미지를, 없으면 SAMPLE을 `data.js`로 묶어 넣습니다.
+- zip을 참가자 컴퓨터에 풀고 `index.html`을 더블클릭하면 서버 없이 끝까지 진행됩니다. 기록은 그 브라우저에 남고, 끝 화면에서 `P001.json`을 내려받아 연구자에게 보냅니다.
+- 묶음에는 실제 문항이 들어가므로 `local_bundle/`과 zip은 git에 올라가지 않습니다.
+- 같은 페이지를 연구자 서버(`/mockgap/`)로 열면 자동 저장이 되고, 서버가 없으면 자동으로 `data.js`로 넘어갑니다.
+
 ## 자료 폴더
 
 | 폴더 | 내용 | git |

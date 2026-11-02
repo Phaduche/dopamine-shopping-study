@@ -62,6 +62,24 @@ def init_db(conn=None):
             );
             INSERT OR IGNORE INTO settings VALUES ('assignment_mode', 'fixed');
             INSERT OR IGNORE INTO settings VALUES ('fixed_condition', '0');
+            -- ORDERTRACE(VISTA-01) 시각 순서 과제
+            CREATE TABLE IF NOT EXISTS ot_sessions (
+                sid TEXT PRIMARY KEY,
+                code TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                trial_order TEXT NOT NULL,
+                finished_at TEXT,
+                confirm TEXT
+            );
+            CREATE TABLE IF NOT EXISTS ot_trials (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sid TEXT,
+                code TEXT,
+                ts TEXT NOT NULL,
+                kind TEXT, clip_id TEXT, method TEXT, obs_fps INTEGER, soa_ms INTEGER, profile TEXT, truth TEXT,
+                response TEXT, confidence INTEGER, rt_ms INTEGER, skipped_frames INTEGER, play_ms INTEGER, anomaly INTEGER,
+                trial_index INTEGER, attempt INTEGER
+            );
             """
         )
 
@@ -108,6 +126,45 @@ def participants_csv(c):
 def events_csv(c):
     rows = c.execute("SELECT id, pid, ts, type, detail FROM events ORDER BY id").fetchall()
     return to_csv(["id", "pid", "ts", "type", "detail"], [tuple(r) for r in rows])
+
+
+OT_COLS = ["sid", "code", "ts", "kind", "trial_index", "attempt", "clip_id", "method", "obs_fps", "soa_ms", "profile", "truth",
+           "response", "confidence", "rt_ms", "skipped_frames", "play_ms", "anomaly"]
+
+
+def ordertrace_csv(c):
+    rows = c.execute(f"SELECT {', '.join(OT_COLS)} FROM ot_trials ORDER BY id").fetchall()
+    # wrong_definite: 실제 순서와 다른 특정 순서(red/blue)를 단정한 시행 = 1차 결과
+    out = []
+    for r in rows:
+        d = dict(zip(OT_COLS, r))
+        wrong = 1 if d["response"] in ("red", "blue") and d["truth"] in ("red", "blue") and d["response"] != d["truth"] else 0
+        out.append(list(r) + [wrong])
+    return to_csv(OT_COLS + ["wrong_definite"], out)
+
+
+def ordertrace_summary(c):
+    n_sess = c.execute("SELECT COUNT(*) FROM ot_sessions").fetchone()[0]
+    n_done = c.execute("SELECT COUNT(*) FROM ot_sessions WHERE finished_at IS NOT NULL").fetchone()[0]
+    by = {}
+    for m, truth, resp, n in c.execute(
+            "SELECT method, truth, response, COUNT(*) FROM ot_trials WHERE kind='main' GROUP BY method, truth, response"):
+        b = by.setdefault(m, {"trials": 0, "wrong_definite": 0})
+        b["trials"] += n
+        if resp in ("red", "blue") and truth in ("red", "blue") and resp != truth:
+            b["wrong_definite"] += n
+    return {"sessions": n_sess, "finished": n_done, "by_method": by}
+
+
+def ot_manifest_order():
+    """manifest의 본시행 clip id를 무작위 순서로. manifest가 없으면 빈 목록."""
+    p = ROOT / "ordertrace" / "stimuli" / "manifest.json"
+    if not p.exists():
+        return []
+    ids = [cl["id"] for cl in json.loads(p.read_text())["clips"] if cl["kind"] == "main"]
+    rng = secrets.SystemRandom()
+    rng.shuffle(ids)
+    return ids
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -165,6 +222,12 @@ class Handler(SimpleHTTPRequestHandler):
                     if f.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp"):
                         photos.setdefault(f.stem, f"img/{f.name}")
             return self.send_json(photos)
+        if path == "/api/export/ordertrace.csv":
+            with db() as c:
+                return self.send_file(ordertrace_csv(c), f"ordertrace_{datetime.now():%Y%m%d_%H%M}.csv")
+        if path == "/api/ot/summary":
+            with db() as c:
+                return self.send_json(ordertrace_summary(c))
         if path == "/api/admin/summary":
             with db() as c:
                 ps = [dict(r) for r in c.execute(
@@ -201,6 +264,46 @@ class Handler(SimpleHTTPRequestHandler):
                           (pid, ts, "assigned", json.dumps({"condition": cond, "mode": mode})))
             target = "/shop/" if cond == 0 else REAL_SITE_URL
             return self.send_json({"pid": pid, "condition": cond, "redirect": target})
+
+        # ── ORDERTRACE(VISTA-01) ──────────────────────────────
+        if path == "/api/ot/start":
+            code = str(data.get("code") or "").strip().upper()[:32]
+            if len(code) < 4:
+                return self.send_json({"error": "code"}, 400)
+            order = ot_manifest_order()
+            sid = "S" + secrets.token_hex(4).upper()
+            with db() as c:
+                c.execute("INSERT INTO ot_sessions (sid, code, created_at, trial_order) VALUES (?,?,?,?)",
+                          (sid, code, now(), json.dumps(order)))
+            return self.send_json({"sid": sid, "order": order})
+
+        if path == "/api/ot/response":
+            row = {k: data.get(k) for k in OT_COLS if k not in ("sid", "code", "ts", "trial_index")}
+
+            def num(v):   # 숫자가 아닌 값(객체 등)이 섞여 들어와도 저장이 실패하지 않게
+                return v if isinstance(v, (int, float)) else None
+            for k in ("obs_fps", "soa_ms", "confidence", "rt_ms", "skipped_frames", "play_ms", "anomaly"):
+                row[k] = num(row[k])
+            for k in ("kind", "clip_id", "method", "profile", "truth", "response"):
+                row[k] = str(row[k])[:40] if row[k] is not None else None
+            with db() as c:
+                c.execute(
+                    "INSERT INTO ot_trials (sid, code, ts, kind, clip_id, method, obs_fps, soa_ms, profile, truth, response, confidence,"
+                    " rt_ms, skipped_frames, play_ms, anomaly, trial_index, attempt) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (data.get("sid"), str(data.get("code") or "")[:32], now(), row["kind"], row["clip_id"], row["method"], row["obs_fps"],
+                     row["soa_ms"], row["profile"], row["truth"], row["response"], row["confidence"], row["rt_ms"], row["skipped_frames"],
+                     row["play_ms"], row["anomaly"], num(data.get("index")), num(data.get("attempt"))))
+            return self.send_json({"ok": True})
+
+        if path == "/api/ot/finish":
+            sid = str(data.get("sid") or "")
+            with db() as c:
+                r = c.execute("SELECT confirm FROM ot_sessions WHERE sid=?", (sid,)).fetchone()
+                if not r:
+                    return self.send_json({"error": "unknown sid"}, 404)
+                confirm = r["confirm"] or ("V" + secrets.token_hex(3).upper())
+                c.execute("UPDATE ot_sessions SET finished_at=COALESCE(finished_at, ?), confirm=? WHERE sid=?", (now(), confirm, sid))
+            return self.send_json({"confirm": confirm})
 
         if path == "/api/log":
             with db() as c:

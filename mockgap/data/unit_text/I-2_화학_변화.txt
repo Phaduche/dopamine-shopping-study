@@ -1,0 +1,1 @@
+[SAMPLE] 교과서 본문 자리 표시. 실제 본문은 data_local/unit_text/I-2_화학_변화.txt 에 둔다 (저장소에 올리지 않음).

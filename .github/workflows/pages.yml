@@ -31,7 +31,7 @@ jobs:
           rm -rf mockgap/data_local            # 혹시 있어도 공개하지 않는다
           python3 mockgap/build_local.py
           mkdir -p _site
-          cp site/index.html _site/index.html
+          cp site/index.html site/researcher.html _site/
           cp -r mockgap/local_bundle _site/mockgap
           mkdir -p _site/ordertrace
           cp ordertrace/index.html ordertrace/task.js ordertrace/style.css _site/ordertrace/

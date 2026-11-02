@@ -12,6 +12,7 @@
 import csv
 import io
 import json
+import re
 import secrets
 import socket
 import sqlite3
@@ -70,6 +71,13 @@ def init_db(conn=None):
                 trial_order TEXT NOT NULL,
                 finished_at TEXT,
                 confirm TEXT
+            );
+            -- MOCKGAP 공부 방법 실험: 참가자 기록 전체(JSON)를 번호별로 보관
+            CREATE TABLE IF NOT EXISTS mg_records (
+                pid TEXT PRIMARY KEY,
+                grp TEXT, ord TEXT, stage TEXT,
+                created_at TEXT, updated_at TEXT,
+                record TEXT NOT NULL
             );
             CREATE TABLE IF NOT EXISTS ot_trials (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -156,6 +164,89 @@ def ordertrace_summary(c):
     return {"sessions": n_sess, "finished": n_done, "by_method": by}
 
 
+# ── MOCKGAP ──────────────────────────────────────────────────
+MG_DIR = ROOT / "mockgap"
+
+
+def mg_data_dir():
+    """실제 문항·교과서 본문이 든 data_local/ 이 있으면 그것을, 없으면 SAMPLE 인 data/ 를 쓴다."""
+    local = MG_DIR / "data_local"
+    return (local, "data_local") if (local / "config.json").exists() or (local / "tests").is_dir() else (MG_DIR / "data", "sample")
+
+
+def mg_bundle():
+    """참가자 페이지가 쓰는 자료 묶음. data_local 에 없는 파일은 data 의 것으로 채운다."""
+    base, source = mg_data_dir()
+    sample = MG_DIR / "data"
+
+    def pick(rel):
+        for d in (base, sample):
+            p = d / rel
+            if p.exists():
+                return p
+        return None
+
+    def load_json(rel, default):
+        p = pick(rel)
+        return json.loads(p.read_text(encoding="utf-8")) if p else default
+
+    config = load_json("config.json", {})
+    units = load_json("units.json", {})
+    slug = lambda u: u.replace(" ", "_")
+    out = {"source": source, "config": config, "units": units, "unit_text": {}, "practice_sets": {}, "tests": {}, "objectives": {}, "past_formats": {}}
+    for u in units:
+        t = pick(f"unit_text/{slug(u)}.txt")
+        out["unit_text"][u] = t.read_text(encoding="utf-8") if t else ""
+        out["practice_sets"][u] = load_json(f"practice_sets/{slug(u)}.json", {}).get("items", [])
+        out["tests"][u] = load_json(f"tests/{slug(u)}.json", {}).get("items", [])
+        obj = load_json(f"objectives/{slug(u)}.json", None)
+        if obj:
+            out["objectives"][u] = obj.get("objectives", obj if isinstance(obj, list) else [])
+        pf = load_json(f"past_formats/{slug(u)}.json", None)
+        if pf:
+            out["past_formats"][u] = pf
+    return out
+
+
+def mg_flatten(r):
+    """참가자 기록 하나 → CSV 한 줄 (session-frame 의 researcher.html 과 같은 열)."""
+    pre = r.get("pre_survey") or {}
+    out = {"id": r.get("id"), "group": r.get("group"), "order": r.get("order"), "stage": r.get("stage"), "created": r.get("created", ""),
+           "updated": r.get("updated", ""), "data_source": r.get("data_source", ""),
+           "main_app": pre.get("main_app", ""), "apps": "|".join(pre.get("apps") or []), "freq": pre.get("freq", ""),
+           "pre_trust": pre.get("trust", ""), "pre_verify": pre.get("verify", ""), "pre_confidence": pre.get("confidence", "")}
+    errs = {}
+    for k in ("A", "B"):
+        s = (r.get("sessions") or {}).get(k) or {}
+        m, j, t, w, p = s.get("metrics") or {}, s.get("judge") or {}, s.get("test") or {}, s.get("warning") or {}, s.get("practice") or {}
+        pred, pct = j.get("predicted"), t.get("mc_pct")
+        err = round(pred - pct, 1) if isinstance(pred, (int, float)) and isinstance(pct, (int, float)) else ""
+        out.update({f"unit_{k}": s.get("unit", ""), f"source_{k}": s.get("source", ""), f"ai_app_{k}": s.get("ai_app") or s.get("ai_app_other") or "",
+                    f"ai_model_{k}": s.get("ai_model", ""), f"n_parsed_{k}": s.get("n_parsed", ""), f"parse_ok_{k}": s.get("parse_ok", ""),
+                    f"overlap4_{k}": m.get("mean_overlap4", ""), f"coverage_{k}": m.get("coverage_ratio", ""), f"format_tv_{k}": m.get("format_tv_vs_past", ""),
+                    f"textbook_mentions_{k}": len(m.get("textbook_mentions") or []), f"warning_dwell_s_{k}": w.get("dwell_s", ""),
+                    f"confirm_count_{k}": p.get("confirm_count", ""), f"practice_min_{k}": p.get("elapsed_min", ""),
+                    f"predicted_{k}": pred if pred is not None else "", f"readiness_{k}": j.get("readiness", ""), f"similar_{k}": j.get("similar", ""),
+                    f"key_trust_{k}": j.get("key_trust", ""), f"mc_correct_{k}": t.get("mc_correct", ""), f"mc_total_{k}": t.get("mc_total", ""),
+                    f"mc_pct_{k}": pct if pct is not None else "", f"err_{k}": err})
+        if s.get("source"):
+            errs[s["source"]] = err
+    out["err_ai"], out["err_exam"] = errs.get("ai", ""), errs.get("exam", "")
+    num = lambda v: isinstance(v, (int, float)) and not isinstance(v, bool)
+    out["delta"] = round(errs["ai"] - errs["exam"], 1) if num(errs.get("ai")) and num(errs.get("exam")) else ""
+    post = r.get("post_survey") or {}
+    out["saw_errors"], out["used_ai_in_practice"] = post.get("saw_errors", ""), post.get("used_ai_in_practice", "")
+    return out
+
+
+def mg_csv(c):
+    rows = [mg_flatten(json.loads(r["record"])) for r in c.execute("SELECT record FROM mg_records ORDER BY pid")]
+    if not rows:
+        return to_csv(["id"], [])
+    cols = list(rows[0].keys())
+    return to_csv(cols, [[r.get(k, "") for k in cols] for r in rows])
+
+
 def ot_manifest_order():
     """manifest의 본시행 clip id를 무작위 순서로. manifest가 없으면 빈 목록."""
     p = ROOT / "ordertrace" / "stimuli" / "manifest.json"
@@ -222,6 +313,16 @@ class Handler(SimpleHTTPRequestHandler):
                     if f.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp"):
                         photos.setdefault(f.stem, f"img/{f.name}")
             return self.send_json(photos)
+        if path == "/api/mg/bundle":
+            return self.send_json(mg_bundle())
+        if path == "/api/mg/summary":
+            with db() as c:
+                rows = [dict(r) for r in c.execute(
+                    "SELECT pid, grp, ord, stage, created_at, updated_at FROM mg_records ORDER BY pid")]
+                return self.send_json({"data_source": mg_data_dir()[1], "participants": rows})
+        if path == "/api/export/mockgap.csv":
+            with db() as c:
+                return self.send_file(mg_csv(c), f"mockgap_{datetime.now():%Y%m%d_%H%M}.csv")
         if path == "/api/export/ordertrace.csv":
             with db() as c:
                 return self.send_file(ordertrace_csv(c), f"ordertrace_{datetime.now():%Y%m%d_%H%M}.csv")
@@ -264,6 +365,22 @@ class Handler(SimpleHTTPRequestHandler):
                           (pid, ts, "assigned", json.dumps({"condition": cond, "mode": mode})))
             target = "/shop/" if cond == 0 else REAL_SITE_URL
             return self.send_json({"pid": pid, "condition": cond, "redirect": target})
+
+        if path == "/api/mg/save":
+            # 참가자 기록 전체를 번호별로 덮어쓴다. 예비용으로 data/mockgap/<번호>.json 에도 남긴다
+            pid = str(data.get("id") or "").strip().upper()
+            if not re.fullmatch(r"P\d{3}", pid) or "sessions" not in data:
+                return self.send_json({"error": "bad record"}, 400)
+            body = json.dumps(data, ensure_ascii=False)
+            with db() as c:
+                c.execute("INSERT INTO mg_records (pid, grp, ord, stage, created_at, updated_at, record) VALUES (?,?,?,?,?,?,?)"
+                          " ON CONFLICT(pid) DO UPDATE SET grp=excluded.grp, ord=excluded.ord, stage=excluded.stage,"
+                          " updated_at=excluded.updated_at, record=excluded.record",
+                          (pid, data.get("group"), data.get("order"), data.get("stage"), data.get("created"), now(), body))
+            d = DB_PATH.parent / "mockgap"
+            d.mkdir(parents=True, exist_ok=True)
+            (d / f"{pid}.json").write_text(body, encoding="utf-8")
+            return self.send_json({"ok": True})
 
         # ── ORDERTRACE(VISTA-01) ──────────────────────────────
         if path == "/api/ot/start":

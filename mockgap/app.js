@@ -33,7 +33,7 @@
   const key = pid => "mockgap:" + pid;
   function loadRec(pid) { try { const s = localStorage.getItem(key(pid)); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
   function saveRec(rec) { rec.updated = now(); try { localStorage.setItem(key(rec.id), JSON.stringify(rec)); } catch (e) { alert("이 브라우저에 저장할 수 없습니다. 연구자에게 알려 주세요."); } return remoteSave(rec); }
-  function remoteSave(rec) { try { return fetch("/api/mg/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rec), keepalive: true })
+  function remoteSave(rec) { if (location.protocol === "file:") return Promise.resolve(false); try { return fetch("/api/mg/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rec), keepalive: true })
     .then(r => r.ok).catch(() => false); } catch (e) { return Promise.resolve(false); } }
   function advance(rec, to) { rec.events.push({ ts: now(), from: rec.stage, to }); rec.stage = to; saveRec(rec); render(); }
   const sessionKey = st => st.startsWith("s1") ? "A" : "B";
@@ -241,10 +241,12 @@
 
   function pageDone(rec) { const json = JSON.stringify(rec, null, 1);
     shell(`<h2>끝났습니다</h2><p>참여해 주셔서 고맙습니다. 모든 과정이 끝났습니다.</p><p id="rs" class="small">저장 상태 확인 중…</p>
-      <button id="dl">기록 파일 내려받기 (예비용)</button>
+      <button id="dl">기록 파일 내려받기</button> <button id="cp">내용 복사</button> <span class="small" id="cpmsg"></span>
+      <textarea id="json" readonly style="min-height:120px;margin-top:8px">${esc(json)}</textarea>
       <h3>연구 설명</h3><p>${esc(CFG.debrief)}</p><p class="small">이 창은 닫아도 됩니다.</p>`, rec);
-    remoteSave(rec).then(ok => { const el = document.getElementById("rs"); if (el) el.textContent = ok ? "기록이 연구자 컴퓨터에 저장되었습니다." : "자동 저장 서버가 없습니다. 아래에서 파일을 내려받아 연구자에게 보내 주세요."; });
-    document.getElementById("dl").onclick = () => download(`${rec.id}.json`, json); }
+    remoteSave(rec).then(ok => { const el = document.getElementById("rs"); if (el) el.textContent = ok ? "기록이 연구자 컴퓨터에 저장되었습니다. 파일 내려받기는 예비용입니다." : `자동 저장 서버가 없습니다. "기록 파일 내려받기"를 눌러 ${rec.id}.json 파일을 연구자에게 보내 주세요. 내려받기가 안 되면 아래 상자 내용을 복사해서 보내도 됩니다.`; });
+    document.getElementById("dl").onclick = () => download(`${rec.id}.json`, json);
+    document.getElementById("cp").onclick = () => { navigator.clipboard.writeText(json).then(() => document.getElementById("cpmsg").textContent = "복사됨", () => { document.getElementById("json").select(); document.getElementById("cpmsg").textContent = "상자 내용을 Ctrl+C 로 복사하세요"; }); }; }
 
   function render() { const pid = sessionStorage.getItem("mockgap:pid"); const rec = pid ? loadRec(pid) : null;
     if (!rec) { pageLogin(); return; }
@@ -255,7 +257,10 @@
     window.scrollTo(0, 0); }
 
   window.MOCKGAP = { parseAI, localMetrics, assignment };
-  fetch("/api/mg/bundle").then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
-    .then(b => { D = b; CFG = b.config; render(); })
-    .catch(() => { app.innerHTML = "<h1>자료를 불러올 수 없습니다</h1><p>연구자 컴퓨터에서 <code>python3 server.py</code> 가 켜져 있는지 확인해 주세요.</p>"; });
+  // 자료: 1순위 연구자 서버(/api/mg/bundle), 2순위 같이 있는 data.js (참가자 컴퓨터에서 서버 없이 열 때)
+  const start = b => { D = b; CFG = b.config; render(); };
+  const local = () => window.MOCKGAP_DATA ? start(window.MOCKGAP_DATA)
+    : (app.innerHTML = "<h1>자료를 불러올 수 없습니다</h1><p>연구자 컴퓨터에서 <code>python3 server.py</code> 가 켜져 있는지, 또는 이 폴더에 <code>data.js</code> 가 있는지 확인해 주세요.</p>");
+  if (location.protocol === "file:") local();
+  else fetch("/api/mg/bundle").then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(start).catch(local);
 })();

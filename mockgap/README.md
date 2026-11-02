@@ -40,6 +40,12 @@ python3 mockgap/build_local.py      # → mockgap/local_bundle/ 와 mockgap/loca
 - 묶음에는 실제 문항이 들어가므로 `local_bundle/`과 zip은 git에 올라가지 않습니다.
 - 같은 페이지를 연구자 서버(`/mockgap/`)로 열면 자동 저장이 되고, 서버가 없으면 자동으로 `data.js`로 넘어갑니다.
 
+## 웹 배포 (GitHub Pages)
+
+- 참가자: https://phaduche.github.io/dopamine-shopping-study/mockgap/ (SAMPLE 자료, 서버 없음 → 끝 화면에서 기록 파일 내려받기)
+- 연구자: https://phaduche.github.io/dopamine-shopping-study/researcher.html (받은 `P001.json`·`vista01_*.csv`를 브라우저 안에서 합쳐 CSV로)
+- `mockgap/`·`ordertrace/`·`site/`를 고쳐 main에 머지하면 자동으로 다시 배포됩니다
+
 ## 자료 폴더
 
 | 폴더 | 내용 | git |

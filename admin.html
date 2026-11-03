@@ -66,36 +66,6 @@
   </div>
 
   <div class="card">
-    <h2>ORDERTRACE · VISTA-01 시각 순서 과제</h2>
-    <div class="stats">
-      <div class="stat">세션<b id="otSess">0</b></div>
-      <div class="stat">완료<b id="otDone">0</b></div>
-      <div class="stat">반복 · 오순서 단정률<b id="otRep">–</b></div>
-      <div class="stat">보간 · 오순서 단정률<b id="otInt">–</b></div>
-    </div>
-    <div class="row" style="margin-top:12px">
-      <a class="btn" href="/api/export/ordertrace.csv">시행별 응답 CSV</a>
-      <a class="btn ghost" href="/ordertrace/" target="_blank">참가자 페이지 열기</a>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>MOCKGAP · 공부 방법 실험</h2>
-    <div class="sub" style="margin:0 0 10px">자료 출처: <b id="mgSrc">–</b> (data_local = 실제 문항, sample = 자리 표시)</div>
-    <div class="stats">
-      <div class="stat">참가자<b id="mgN">0</b></div>
-      <div class="stat">완료<b id="mgDone">0</b></div>
-    </div>
-    <div class="row" style="margin-top:12px">
-      <a class="btn" href="/api/export/mockgap.csv">참가자별 CSV (err_ai, err_exam, delta 포함)</a>
-      <a class="btn ghost" href="/mockgap/" target="_blank">참가자 페이지 열기</a>
-    </div>
-    <div class="table-wrap" style="margin-top:12px">
-      <table><thead><tr><th>번호</th><th>집단</th><th>순서</th><th>단계</th><th>갱신</th></tr></thead><tbody id="mgRows"></tbody></table>
-    </div>
-  </div>
-
-  <div class="card">
     <h2>참가자 목록</h2>
     <div class="table-wrap">
       <table>
@@ -133,23 +103,8 @@ $("save").onclick = async () => {
   $("msg").textContent = r.ok ? "저장했습니다. 다음 참가자부터 적용됩니다." : "저장 실패";
   load(true);
 };
-async function loadOT() {
-  const d = await fetch("/api/ot/summary").then(r => r.json()).catch(() => null);
-  if (!d) return;
-  $("otSess").textContent = d.sessions; $("otDone").textContent = d.finished;
-  const rate = m => { const b = d.by_method[m]; return b && b.trials ? `${(100 * b.wrong_definite / b.trials).toFixed(1)}% <small style="font-size:12px;color:#888">(${b.trials}시행)</small>` : "–"; };
-  $("otRep").innerHTML = rate("repeat"); $("otInt").innerHTML = rate("interp");
-}
-async function loadMG() {
-  const d = await fetch("/api/mg/summary").then(r => r.json()).catch(() => null);
-  if (!d) return;
-  $("mgSrc").textContent = d.data_source; $("mgN").textContent = d.participants.length;
-  $("mgDone").textContent = d.participants.filter(p => p.stage === "done").length;
-  $("mgRows").innerHTML = d.participants.length ? d.participants.map(p => `<tr><td>${p.pid}</td><td>${p.grp === "warn" ? "경고" : "통제"}</td><td>${p.ord === "ai_first" ? "AI 먼저" : "기출 먼저"}</td><td>${p.stage}</td><td>${(p.updated_at || "").replace("T", " ").slice(0, 16)}</td></tr>`).join("")
-    : `<tr><td colspan="5" style="color:#999;text-align:center;padding:16px">아직 참가자가 없습니다.</td></tr>`;
-}
-load(true); loadOT(); loadMG();
-setInterval(() => { load(false); loadOT(); loadMG(); }, 10000);
+load(true);
+setInterval(() => load(false), 10000);
 </script>
 </body>
 </html>

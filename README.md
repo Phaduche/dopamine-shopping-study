@@ -1,5 +1,9 @@
 # 쇼핑 경험 연구용 웹앱 (로컬 실행)
 
+> 다른 두 연구는 각자 저장소로 옮겼습니다.
+> - 공부 방법 실험(MOCKGAP): https://github.com/Phaduche/mockgap-study
+> - 시각 순서 과제(ORDERTRACE / VISTA-01): https://github.com/Phaduche/ordertrace-study
+
 KSEF 연구용 모의 쇼핑 실험 도구입니다. 참가자가 사전 설문(T0)에 답하면 조건이 배정되고,
 조건에 따라 데모 쇼핑몰 또는 실제 쿠팡으로 이동합니다. 설문 응답과 데모 쇼핑몰 안의 행동 로그는
 로컬 SQLite DB에 저장되고, 연구자 콘솔에서 CSV로 내려받을 수 있습니다.

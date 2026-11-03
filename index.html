@@ -4,42 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>쇼핑 경험 연구 참여</title>
-<style>
-  * { box-sizing: border-box; }
-  body { margin: 0; font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; background: #f4f5f7; color: #111; font-size: 15px; line-height: 1.5; }
-  .wrap { max-width: 640px; margin: 0 auto; padding: 24px 16px 60px; }
-  .bar { height: 6px; background: #e3e5e8; border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
-  .bar i { display: block; height: 100%; background: #346aff; width: 0; transition: width .3s; }
-  .card { background: #fff; border: 1px solid #e3e5e8; border-radius: 10px; padding: 24px 22px; }
-  h1 { font-size: 22px; margin: 0 0 6px; }
-  .desc { color: #666; font-size: 14px; margin-bottom: 20px; }
-  .q { padding: 16px 0; border-top: 1px solid #f0f0f0; }
-  .q:first-of-type { border-top: 0; }
-  .q-text { font-weight: 600; margin-bottom: 10px; }
-  .q.missing .q-text { color: #e52528; }
-  .choices { display: flex; flex-wrap: wrap; gap: 8px; }
-  .choices label { border: 1px solid #d5d8dc; border-radius: 6px; padding: 9px 14px; cursor: pointer; font-size: 14px; }
-  .choices label:has(input:checked) { border-color: #346aff; background: #f2f6ff; color: #346aff; font-weight: 700; }
-  .choices input { display: none; }
-  .likert { display: flex; gap: 6px; }
-  .likert label { flex: 1; text-align: center; border: 1px solid #d5d8dc; border-radius: 6px; padding: 10px 0; cursor: pointer; font-size: 14px; }
-  .likert label:has(input:checked) { border-color: #346aff; background: #346aff; color: #fff; font-weight: 700; }
-  .likert input { display: none; }
-  .ends { display: flex; justify-content: space-between; font-size: 12px; color: #888; margin-top: 4px; }
-  input[type=range] { width: 100%; accent-color: #346aff; }
-  .range-val { text-align: center; font-weight: 700; color: #346aff; font-size: 14px; }
-  .range-val.untouched { color: #aaa; font-weight: 400; }
-  .notice { background: #f8f9fb; border-radius: 8px; padding: 14px 16px; font-size: 14px; color: #444; margin-bottom: 16px; }
-  .notice li { margin: 4px 0; }
-  .agree { display: flex; gap: 8px; align-items: flex-start; font-weight: 600; cursor: pointer; }
-  .nav { display: flex; justify-content: space-between; margin-top: 22px; gap: 10px; }
-  button { border: 0; border-radius: 8px; padding: 13px 22px; font-size: 15px; font-weight: 700; cursor: pointer; background: #346aff; color: #fff; }
-  button.ghost { background: #fff; color: #555; border: 1px solid #ccc; }
-  button:disabled { background: #aac0ff; cursor: default; }
-  .err { color: #e52528; font-size: 14px; margin-top: 12px; }
-  .done { text-align: center; padding: 30px 0; }
-  .done b { font-size: 26px; letter-spacing: 1px; color: #346aff; display: block; margin: 8px 0; }
-</style>
+<link rel="stylesheet" href="survey.css">
 </head>
 <body>
 <div class="wrap">
@@ -47,90 +12,76 @@
   <div class="card" id="card"></div>
 </div>
 <script src="survey-config.js"></script>
+<script src="survey.js"></script>
 <script>
-const card = document.getElementById("card");
-const answers = {};
-let step = -1; // -1 = 안내·동의
+// 흐름: 동의 → 기본 정보 → (서버가 조건 배정) → 쇼핑 → 설문(survey.html)
+const card = document.getElementById("card"), bar = document.getElementById("bar");
+const TOTAL_STEPS = PRE_SURVEY.length + 1 + POST_SURVEY.length; // 진행 막대용
+const STEPS = `<div class="steps"><b>① 기본 정보</b> › ② 쇼핑 › ③ 설문</div>`;
 
-function render() {
-  document.getElementById("bar").style.width = `${((step + 1) / (SURVEY.length + 1)) * 100}%`;
-  if (step < 0) return renderIntro();
-  const sec = SURVEY[step];
-  card.innerHTML = `<h1>${sec.title}</h1><div class="desc">${sec.desc || ""}</div>
-    ${sec.questions.map(q => `<div class="q" data-id="${q.id}"><div class="q-text">${q.text}</div>${field(q)}</div>`).join("")}
-    <div class="err" id="err"></div>
-    <div class="nav"><button class="ghost" id="prev">이전</button><button id="next">${step === SURVEY.length - 1 ? "설문 완료하고 시작하기" : "다음"}</button></div>`;
-  card.querySelectorAll("input").forEach(el => el.addEventListener("input", () => {
-    const id = el.name;
-    answers[id] = el.type === "range" ? +el.value : el.value;
-    if (el.type === "range") { const v = card.querySelector(`[data-val="${id}"]`); v.textContent = el.value; v.classList.remove("untouched"); }
-    el.closest(".q").classList.remove("missing");
-  }));
-  document.getElementById("prev").onclick = () => { step--; render(); scrollTo(0, 0); };
-  document.getElementById("next").onclick = next;
-}
-
-function field(q) {
-  const v = answers[q.id];
-  if (q.type === "choice")
-    return `<div class="choices">${q.options.map(o => `<label><input type="radio" name="${q.id}" value="${o}" ${v === o ? "checked" : ""}>${o}</label>`).join("")}</div>`;
-  if (q.type === "likert")
-    return `<div class="likert">${Array.from({ length: q.points }, (_, i) => i + 1).map(n =>
-      `<label><input type="radio" name="${q.id}" value="${n}" ${+v === n ? "checked" : ""}>${n}</label>`).join("")}</div>
-      <div class="ends"><span>${q.left}</span><span>${q.right}</span></div>`;
-  if (q.type === "slider")
-    return `<input type="range" name="${q.id}" min="0" max="100" value="${v ?? 50}">
-      <div class="range-val ${v == null ? "untouched" : ""}" data-val="${q.id}">${v ?? "막대를 움직여 주세요"}</div>
-      <div class="ends"><span>${q.left}</span><span>${q.right}</span></div>`;
-}
-
-function renderIntro() {
+function intro() {
+  bar.style.width = "4%";
   card.innerHTML = `<h1>쇼핑 경험 연구에 참여해 주셔서 감사합니다</h1>
-    <div class="desc">시작하기 전에 짧은 설문(약 2~3분)에 답해 주세요.</div>
-    <div class="notice"><ul style="margin:0;padding-left:18px">
+    <div class="desc">기본 정보(1분) → 쇼핑 화면 둘러보기 → 짧은 설문(2~3분) 순서로 진행됩니다.</div>
+    <div class="notice"><ul>
       <li>이름·연락처·계정 정보는 수집하지 않으며, 응답은 무작위 연구 ID로만 저장됩니다.</li>
-      <li>설문 후 쇼핑 화면으로 이동합니다. 이동한 화면에서의 행동(화면 이동, 장바구니 등)이 연구용으로 기록될 수 있습니다.</li>
+      <li>쇼핑 화면에서의 행동(화면 이동, 장바구니 등)이 연구용으로 기록될 수 있습니다.</li>
       <li>언제든 참여를 그만둘 수 있으며, 그만두어도 불이익은 없습니다.</li>
     </ul></div>
     <label class="agree"><input type="checkbox" id="agree"> 위 내용을 읽었고 연구 참여에 동의합니다.</label>
     <div class="err" id="err"></div>
-    <div class="nav"><span></span><button id="next">설문 시작</button></div>`;
+    <div class="nav"><span></span><button id="next">시작</button></div>`;
   document.getElementById("next").onclick = () => {
     if (!document.getElementById("agree").checked) return document.getElementById("err").textContent = "동의에 체크해 주세요.";
-    answers.consent = "yes"; step = 0; render(); scrollTo(0, 0);
+    pre();
   };
 }
 
-function next() {
-  const missing = SURVEY[step].questions.filter(q => answers[q.id] == null);
-  missing.forEach(q => card.querySelector(`[data-id="${q.id}"]`).classList.add("missing"));
-  if (missing.length) {
-    document.getElementById("err").textContent = `빨간색 문항 ${missing.length}개에 답해 주세요.`;
-    return card.querySelector(".missing").scrollIntoView({ behavior: "smooth", block: "center" });
-  }
-  if (step < SURVEY.length - 1) { step++; render(); return scrollTo(0, 0); }
-  submit();
+function pre() {
+  runSurvey({
+    sections: PRE_SURVEY, card, bar, stepTotal: TOTAL_STEPS, submitLabel: "쇼핑 화면으로",
+    onSubmit: async answers => {
+      const r = await fetch("/api/start", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers: { consent: "yes", ...answers, submitted_at: new Date().toISOString() } }) });
+      if (!r.ok) throw new Error(r.status);
+      const d = await r.json();
+      try { localStorage.setItem("study-pid", d.pid); } catch {}
+      shopping(d);
+    },
+  });
+  card.insertAdjacentHTML("afterbegin", STEPS);
 }
 
-async function submit() {
-  const btn = document.getElementById("next");
-  btn.disabled = true; btn.textContent = "저장 중…";
-  try {
-    const r = await fetch("/api/start", { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ answers: { ...answers, survey_submitted_at: new Date().toISOString() } }) });
-    if (!r.ok) throw new Error(r.status);
-    const d = await r.json();
-    try { localStorage.setItem("study-pid", d.pid); } catch {}
-    document.getElementById("bar").style.width = "100%";
-    card.innerHTML = `<div class="done">설문이 저장되었습니다. 연구 ID<b>${d.pid}</b>잠시 후 쇼핑 화면으로 이동합니다…</div>`;
-    setTimeout(() => location.href = d.redirect, 2000);
-  } catch (e) {
-    btn.disabled = false; btn.textContent = "다시 시도";
-    document.getElementById("err").textContent = "저장하지 못했습니다. 연구 서버(python3 server.py)가 켜져 있는지 확인해 주세요.";
-  }
+// 쇼핑은 새 탭에서 열고, 이 탭은 "설문 시작" 버튼을 들고 기다린다.
+// (조건 1은 외부 사이트라 돌아올 길이 없으므로 두 조건 모두 같은 방식으로 맞춘다)
+function shopping(d) {
+  bar.style.width = `${((PRE_SURVEY.length + 1) / (TOTAL_STEPS + 1)) * 100}%`;
+  const surveyUrl = `survey.html?pid=${encodeURIComponent(d.pid)}`;
+  const shopUrl = d.condition === 0 ? `${d.redirect}?pid=${encodeURIComponent(d.pid)}` : d.redirect;
+  card.innerHTML = `<div class="steps">① 기본 정보 › <b>② 쇼핑</b> › ③ 설문</div>
+    <h1>쇼핑 화면을 둘러봐 주세요</h1>
+    <div class="desc">연구 ID <b>${d.pid}</b></div>
+    <div class="notice"><ul>
+      <li>아래 버튼을 누르면 쇼핑 화면이 <b>새 탭</b>에서 열립니다. 평소처럼 자유롭게 둘러보세요.</li>
+      <li>장바구니에 담거나 주문해도 됩니다. (데모 화면은 실제 결제·배송이 없습니다)</li>
+      <li>다 보셨으면 <b>이 탭으로 돌아와</b> "설문 시작" 버튼을 눌러 주세요.</li>
+    </ul></div>
+    <button class="big" id="open">쇼핑 화면 열기 ↗</button>
+    <div class="nav" style="margin-top:14px"><span></span><button id="toSurvey" disabled>쇼핑을 마쳤어요 · 설문 시작</button></div>
+    <div class="err" id="err"></div>`;
+  const openBtn = document.getElementById("open"), next = document.getElementById("toSurvey");
+  openBtn.onclick = () => {
+    const w = window.open(shopUrl, "_blank");
+    if (!w) { document.getElementById("err").textContent = "팝업이 차단되었어요. 주소창 옆 차단 아이콘에서 허용해 주세요."; return; }
+    fetch("/api/log", { method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true,
+      body: JSON.stringify({ pid: d.pid, type: "shop_opened", detail: { condition: d.condition } }) }).catch(() => {});
+    openBtn.textContent = "쇼핑 화면 다시 열기 ↗"; openBtn.classList.add("ghost");
+    next.disabled = false;
+  };
+  next.onclick = () => location.href = surveyUrl;
 }
 
-render();
+intro();
 </script>
 </body>
 </html>

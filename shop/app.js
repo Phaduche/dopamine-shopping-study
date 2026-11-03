@@ -312,6 +312,7 @@ function done(id) {
       <p>${arrival(o.at, true)} · 연구용 가상 배송</p></div>
     ${orderCard(o)}
     <div class="cart-actions"><a href="#/orders" class="btn-line">주문목록 보기</a><a href="#/" class="btn-solid">쇼핑 계속하기</a></div>
+    ${PID ? `<p style="text-align:center;font-size:13px;color:#888;margin-top:6px">쇼핑을 마치셨다면 처음 탭으로 돌아가 설문을 시작하거나, <a class="blue" href="/survey.html?pid=${encodeURIComponent(PID)}">여기서 바로 설문</a>을 시작할 수 있어요.</p>` : ""}
   </div>`;
 }
 

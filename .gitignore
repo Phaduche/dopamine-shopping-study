@@ -40,7 +40,3 @@ pnpm-debug.log*
 # 연구 DB (참가자 자료는 커밋하지 않음)
 /data
 
-# MOCKGAP 실제 문항·교과서 본문·참가자 기록 (공개 저장소에 올리지 않음)
-/mockgap/data_local
-/mockgap/local_bundle
-/mockgap/local_bundle.zip
